@@ -7,7 +7,7 @@ const defaults = {
 };
 
 // expose default instance directly
-module.exports = new WorkerManager(defaults, window.Worker ? WebWorkerProxy : CompatibilityWorkerProxy);
+module.exports = new WorkerManager(defaults, window.Worker && (window.URL || window.webkitURL) ? WebWorkerProxy : CompatibilityWorkerProxy);
 
 // allow custom settings (task.js factory)
 module.exports.defaults = function ($config, WorkerProxy) {
