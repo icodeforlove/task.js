@@ -1,4 +1,4 @@
-```javascript
+# task.js [![Build Status](https://travis-ci.org/icodeforlove/task.js.png?branch=master)](https://travis-ci.org/icodeforlove/task.js)
 
 This modules is intended to make working with blocking tasks a bit easier, and is meant to work in node as well as the browser.
 
@@ -19,7 +19,7 @@ Rule of thumb in node keep your object size under 150kb, and in the clientside v
 
 You can wrap a function if the method signatures match, and it doesnt rely on any external variables.
 
-```
+```javascript
 // non async
 function pow(number) {
 	return Math.pow(number, 2);
@@ -37,7 +37,7 @@ But keep in mind that your function cannot reference anything inside of your cur
 
 You can override the defaults like this
 
-```
+```javascript
 // overriding defaults (optional)
 var myCustomTask = task.defaults({
 	maxWorkers: 4, // (default: the system max, or 4 if it cant be resolved)
