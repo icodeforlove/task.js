@@ -1,17 +1,20 @@
 {
-  "name": "task",
-  "version": "0.0.6",
-  "description": "Simplified interface for getting code to run on different cores (node.js, and web)",
-  "main": "dist/client/task.min.js",
-  "authors": [
-    "Chad Scira <chadvscira@gmail.com>"
-  ],
-  "license": "ISC",
-  "homepage": "https://github.com/icodeforlove/task.js",
-  "ignore": [
-    "**/.*",
-    "node_modules",
-    "bower_components",
-    "spec"
-  ]
+	"name": "task",
+	"version": "0.0.6",
+	"description": "Simplified interface for getting code to run on different cores (node.js, and web)",
+	"main": "dist/client/task.min.js",
+	"authors": [
+		"Chad Scira <chadvscira@gmail.com>"
+	],
+	"license": "ISC",
+	"homepage": "https://github.com/icodeforlove/task.js",
+	"ignore": [
+		"**/.*",
+		"node_modules",
+		"bower_components",
+		"spec",
+		"src",
+		"dist/server",
+		"webpack.config.js"
+	]
 }
