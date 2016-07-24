@@ -51,29 +51,29 @@ module.exports = function(config) {
 		// Android 5.0
 		{platformName: 'Android', deviceName: 'Android Emulator', platformVersion: '5.0', browserName: 'Browser'},
 
-		// Android 4.4
-		{platformName: 'Android', deviceName: 'Android Emulator', platformVersion: '4.4', browserName: 'Browser'},
+		// // Android 4.4
+		// {platformName: 'Android', deviceName: 'Android Emulator', platformVersion: '4.4', browserName: 'Browser'},
 
-		// Android 4.3
-		{platformName: 'Android', deviceName: 'Android Emulator', platformVersion: '4.3', browserName: 'Browser'},
+		// // Android 4.3
+		// {platformName: 'Android', deviceName: 'Android Emulator', platformVersion: '4.3', browserName: 'Browser'},
 
-		// Android 4.2
-		{platformName: 'Android', deviceName: 'Android Emulator', platformVersion: '4.2', browserName: 'Browser'},
+		// // Android 4.2
+		// {platformName: 'Android', deviceName: 'Android Emulator', platformVersion: '4.2', browserName: 'Browser'},
 
-		// Android 4.1
-		{platformName: 'Android', deviceName: 'Android Emulator', platformVersion: '4.1', browserName: 'Browser'},
+		// // Android 4.1
+		// {platformName: 'Android', deviceName: 'Android Emulator', platformVersion: '4.1', browserName: 'Browser'},
 
 		// iOS 9.0
 		{platformName: 'iOS', deviceName: 'iPhone Simulator', platformVersion: '9.0', browserName: 'Safari'},
-		{platformName: 'iOS', deviceName: 'iPad Simulator', platformVersion: '9.0', browserName: 'Safari'},
+		//{platformName: 'iOS', deviceName: 'iPad Simulator', platformVersion: '9.0', browserName: 'Safari'},
 
 		// iOS 8.1
 		{platformName: 'iOS', deviceName: 'iPhone Simulator', platformVersion: '8.1', browserName: 'Safari'},
-		{platformName: 'iOS', deviceName: 'iPad Simulator', platformVersion: '8.1', browserName: 'Safari'},
+		//{platformName: 'iOS', deviceName: 'iPad Simulator', platformVersion: '8.1', browserName: 'Safari'},
 
 		// iOS 7.0
 		{platformName: 'iOS', deviceName: 'iPhone Simulator', platformVersion: '7.0', browserName: 'Safari'},
-		{platformName: 'iOS', deviceName: 'iPad Simulator', platformVersion: '7.0', browserName: 'Safari'},
+		//{platformName: 'iOS', deviceName: 'iPad Simulator', platformVersion: '7.0', browserName: 'Safari'},
 
 		// Windows XP Browsers
 		{platform: 'Windows XP', browserName: 'chrome', version: 'latest'},
@@ -228,7 +228,7 @@ module.exports = function(config) {
 
 		// Increase timeout in case connection in CI is slow
 		captureTimeout: 240000,
-		browserDisconnectTimeout: 20000,
+		browserDisconnectTimeout: 120000,
 		browserNoActivityTimeout: 240000,
 		customLaunchers: customLaunchers,
 		browsers: Object.keys(customLaunchers),
@@ -236,6 +236,6 @@ module.exports = function(config) {
 
 		// Concurrency level
 		// how many browser should be started simultaneous
-		concurrency: 5
+		concurrency: 4
 	})
 }
