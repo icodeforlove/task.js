@@ -1,15 +1,11 @@
+import isModern from './isModern';
 import WorkerManager from '../WorkerManager';
 
 const defaults = {
 	maxWorkers: navigator.hardwareConcurrency
 };
 
-var WorkerProxy;
-if (typeof Worker != 'undefined' && (window.URL || window.webkitURL)) {
-	WorkerProxy = require('./WebWorkerProxy');
-} else {
-	WorkerProxy = require('./CompatibilityWorkerProxy');
-}
+var WorkerProxy = isModern() ? require('./WebWorkerProxy') : require('./CompatibilityWorkerProxy');
 
 // expose default instance directly
 module.exports = new WorkerManager(defaults, WorkerProxy);

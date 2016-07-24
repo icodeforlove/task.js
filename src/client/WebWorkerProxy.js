@@ -1,7 +1,9 @@
+import functionToObjectURL from './functionToObjectURL';
+
 class WebWorkerProxy {
 	constructor () {
 		this._listeners = {};
-		this._worker = new Worker(this._functionToObjectURL(this.WORKER_SOURCE));
+		this._worker = new Worker(functionToObjectURL(this.WORKER_SOURCE));
 		this._worker.addEventListener('message', this._onMessage);
 	}
 
@@ -20,24 +22,6 @@ class WebWorkerProxy {
 			postMessage({id: message.id, result: eval('(' + message.func + ')').apply(null, args)});
 		}
 	}`;
-
-	_functionToObjectURL (func) {
-		let blob,
-			stringFunc = func.toString();
-
-		stringFunc = stringFunc.substring(stringFunc.indexOf('{') + 1, stringFunc.lastIndexOf('}'))
-
-		try {
-			blob = new Blob([stringFunc], { 'type' : 'text/javascript' });
-		} catch (error) { // Backwards-compatibility
-			window.BlobBuilder = window.BlobBuilder || window.WebKitBlobBuilder || window.MozBlobBuilder;
-			blob = new BlobBuilder();
-			blob.append(stringFunc);
-			blob = blob.getBlob();
-		}
-
-		return (window.URL || window.webkitURL).createObjectURL(blob);
-	}
 
 	_onMessage = (event) => {
 		let message = event.data;

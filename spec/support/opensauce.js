@@ -31,11 +31,11 @@ module.exports = function(config) {
 		{platform: 'Mac 10.9', browserName: 'firefox', version: 'latest'},
 		{platform: 'Mac 10.9', browserName: 'safari', version: 'latest'},
 
-		// Android 5.1
-		//{platformName: 'Android', deviceName: 'Android Emulator', platformVersion: '5.1', browserName: 'Browser'},
+		// // Android 5.1
+		{platformName: 'Android', deviceName: 'Android Emulator', platformVersion: '5.1', browserName: 'Browser'},
 
-		// Android 5.0
-		//{platformName: 'Android', deviceName: 'Android Emulator', platformVersion: '5.0', browserName: 'Browser'},
+		//  Android 5.0
+		// {platformName: 'Android', deviceName: 'Android Emulator', platformVersion: '5.0', browserName: 'Browser'},
 
 		// // Android 4.4
 		// {platformName: 'Android', deviceName: 'Android Emulator', platformVersion: '4.4', browserName: 'Browser'},
@@ -58,7 +58,7 @@ module.exports = function(config) {
 		//{platformName: 'iOS', deviceName: 'iPad Simulator', platformVersion: '8.1', browserName: 'Safari'},
 
 		// iOS 7.0
-		{platformName: 'iOS', deviceName: 'iPhone Simulator', platformVersion: '7.0', browserName: 'Safari', appiumVersion: '1.5.2'},
+		//{platformName: 'iOS', deviceName: 'iPhone Simulator', platformVersion: '7.0', browserName: 'Safari', appiumVersion: '1.5.2'},
 		//{platformName: 'iOS', deviceName: 'iPad Simulator', platformVersion: '7.0', browserName: 'Safari'},
 
 		// Windows XP Browsers
@@ -75,13 +75,11 @@ module.exports = function(config) {
 		// Windows 8 Browsers
 		{platform: 'Windows 8', browserName: 'chrome', version: 'latest'},
 		{platform: 'Windows 8', browserName: 'firefox', version: 'latest'},
-		{platform: 'Windows 8', browserName: 'opera', version: 'latest'},
 		{platform: 'Windows 8', browserName: 'internet explorer', version: 'latest'},
 
 		// Windows 8.1 Browsers
 		{platform: 'Windows 8.1', browserName: 'chrome', version: 'latest'},
 		{platform: 'Windows 8.1', browserName: 'firefox', version: 'latest'},
-		{platform: 'Windows 8.1', browserName: 'opera', version: 'latest'},
 		{platform: 'Windows 8.1', browserName: 'internet explorer', version: 'latest'},
 
 		// Windows 10 Browsers
@@ -93,14 +91,12 @@ module.exports = function(config) {
 		{platform: 'Windows 10', browserName: 'firefox', version: 'latest-1'},
 		{platform: 'Windows 10', browserName: 'firefox', version: 'latest-2'},
 
-		{platform: 'Windows 10', browserName: 'opera', version: 'latest'},
-
 		{platform: 'Windows 10', browserName: 'internet explorer', version: 'latest'},
 
 		// Linux Browsers
 		{platform: 'Linux', browserName: 'chrome', version: 'latest'},
 		{platform: 'Linux', browserName: 'firefox', version: 'latest'},
-		{platform: 'Linux', browserName: 'opera', version: 'latest'},
+		{platform: 'Linux', browserName: 'opera', version: 'latest'}
 	];
 
 	// generate launcher object
@@ -190,5 +186,5 @@ module.exports = function(config) {
 		// Concurrency level
 		// how many browser should be started simultaneous
 		concurrency: 3
-	})
+	});
 }

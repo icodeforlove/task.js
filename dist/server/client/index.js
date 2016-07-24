@@ -1,5 +1,9 @@
 'use strict';
 
+var _isModern = require('./isModern');
+
+var _isModern2 = _interopRequireDefault(_isModern);
+
 var _WorkerManager = require('../WorkerManager');
 
 var _WorkerManager2 = _interopRequireDefault(_WorkerManager);
@@ -10,12 +14,7 @@ var defaults = {
 	maxWorkers: navigator.hardwareConcurrency
 };
 
-var WorkerProxy;
-if (typeof Worker != 'undefined' && (window.URL || window.webkitURL)) {
-	WorkerProxy = require('./WebWorkerProxy');
-} else {
-	WorkerProxy = require('./CompatibilityWorkerProxy');
-}
+var WorkerProxy = (0, _isModern2['default'])() ? require('./WebWorkerProxy') : require('./CompatibilityWorkerProxy');
 
 // expose default instance directly
 module.exports = new _WorkerManager2['default'](defaults, WorkerProxy);

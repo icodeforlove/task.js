@@ -48,7 +48,11 @@ var task =
 
 	'use strict';
 
-	var _WorkerManager = __webpack_require__(1);
+	var _isModern = __webpack_require__(1);
+
+	var _isModern2 = _interopRequireDefault(_isModern);
+
+	var _WorkerManager = __webpack_require__(3);
 
 	var _WorkerManager2 = _interopRequireDefault(_WorkerManager);
 
@@ -58,12 +62,7 @@ var task =
 		maxWorkers: navigator.hardwareConcurrency
 	};
 
-	var WorkerProxy;
-	if (typeof Worker != 'undefined' && (window.URL || window.webkitURL)) {
-		WorkerProxy = __webpack_require__(3);
-	} else {
-		WorkerProxy = __webpack_require__(4);
-	}
+	var WorkerProxy = (0, _isModern2['default'])() ? __webpack_require__(5) : __webpack_require__(6);
 
 	// expose default instance directly
 	module.exports = new _WorkerManager2['default'](defaults, WorkerProxy);
@@ -91,11 +90,60 @@ var task =
 
 	'use strict';
 
+	var _functionToObjectURL = __webpack_require__(2);
+
+	var _functionToObjectURL2 = _interopRequireDefault(_functionToObjectURL);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+
+	module.exports = function isModern() {
+		if (typeof Worker != 'undefined' && (window.URL || window.webkitURL)) {
+			try {
+				var worker = new Worker((0, _functionToObjectURL2['default'])(function () {}));
+				worker.terminate();
+				return true;
+			} catch (error) {}
+		}
+
+		return false;
+	};
+
+/***/ },
+/* 2 */
+/***/ function(module, exports) {
+
+	'use strict';
+
+	module.exports = function functionToObjectURL(func) {
+		var blob = void 0,
+		    stringFunc = func.toString();
+
+		stringFunc = stringFunc.substring(stringFunc.indexOf('{') + 1, stringFunc.lastIndexOf('}'));
+
+		try {
+			blob = new Blob([stringFunc], { 'type': 'text/javascript' });
+		} catch (error) {
+			// Backwards-compatibility
+			window.BlobBuilder = window.BlobBuilder || window.WebKitBlobBuilder || window.MozBlobBuilder;
+			blob = new BlobBuilder();
+			blob.append(stringFunc);
+			blob = blob.getBlob();
+		}
+
+		return (window.URL || window.webkitURL).createObjectURL(blob);
+	};
+
+/***/ },
+/* 3 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
 	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-	var _Worker = __webpack_require__(2);
+	var _Worker = __webpack_require__(4);
 
 	var _Worker2 = _interopRequireDefault(_Worker);
 
@@ -243,7 +291,7 @@ var task =
 	module.exports = WorkerManager;
 
 /***/ },
-/* 2 */
+/* 4 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -330,12 +378,18 @@ var task =
 	module.exports = Worker;
 
 /***/ },
-/* 3 */
-/***/ function(module, exports) {
+/* 5 */
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	var _functionToObjectURL = __webpack_require__(2);
+
+	var _functionToObjectURL2 = _interopRequireDefault(_functionToObjectURL);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -359,31 +413,11 @@ var task =
 			};
 
 			this._listeners = {};
-			this._worker = new Worker(this._functionToObjectURL(this.WORKER_SOURCE));
+			this._worker = new Worker((0, _functionToObjectURL2['default'])(this.WORKER_SOURCE));
 			this._worker.addEventListener('message', this._onMessage);
 		}
 
 		_createClass(WebWorkerProxy, [{
-			key: '_functionToObjectURL',
-			value: function _functionToObjectURL(func) {
-				var blob = void 0,
-				    stringFunc = func.toString();
-
-				stringFunc = stringFunc.substring(stringFunc.indexOf('{') + 1, stringFunc.lastIndexOf('}'));
-
-				try {
-					blob = new Blob([stringFunc], { 'type': 'text/javascript' });
-				} catch (error) {
-					// Backwards-compatibility
-					window.BlobBuilder = window.BlobBuilder || window.WebKitBlobBuilder || window.MozBlobBuilder;
-					blob = new BlobBuilder();
-					blob.append(stringFunc);
-					blob = blob.getBlob();
-				}
-
-				return (window.URL || window.webkitURL).createObjectURL(blob);
-			}
-		}, {
 			key: 'addEventListener',
 			value: function addEventListener(event, callback) {
 				this._listeners[event] = this._listeners[event] || [];
@@ -407,7 +441,7 @@ var task =
 	module.exports = WebWorkerProxy;
 
 /***/ },
-/* 4 */
+/* 6 */
 /***/ function(module, exports) {
 
 	'use strict';
