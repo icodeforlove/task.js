@@ -1,0 +1,111 @@
+import Worker from './Worker';
+
+class WorkerManager {
+	constructor ($config, WorkerProxy) {
+		$config = $config || {};
+
+		this._WorkerProxy = WorkerProxy;
+
+		this._maxWorkers = $config.maxWorkers || 4;
+		this._idleTimeout = $config.idleTimeout === false ? false : $config.idleTimeout || 10000;
+		this._idleCheckInterval = $config.idleCheckInterval || 1000;
+
+		this._workers = [];
+		this._queue = [];
+		this._onWorkerTaskComplete = this._onWorkerTaskComplete.bind(this);
+		this._flushIdleWorkers = this._flushIdleWorkers.bind(this);
+	}
+
+	run (task) {
+		if (this._idleTimeout && typeof this._idleCheckIntervalID !== 'number') {
+			this._idleCheckIntervalID = setInterval(this._flushIdleWorkers, this._idleCheckInterval);
+		}
+
+		return new Promise(function (resolve, reject) {
+			// kind of a hack
+			task.resolve = resolve;
+			task.reject = reject;
+			this._queue.push(task);
+			this._next();
+		}.bind(this));
+	}
+
+	wrap (func) {
+		return function () {
+			return this.run({
+				arguments: Array.from(arguments),
+				function: func
+			});
+		}.bind(this);
+	}
+
+	terminate () {
+		// kill idle timeout (if it exists)
+		if (this._idleTimeout && typeof this._idleCheckIntervalID == 'number') {
+			clearInterval(this._idleCheckIntervalID);
+			this._idleCheckIntervalID = null;
+		}
+
+		// terminate all existing workers
+		this._workers.forEach(function (worker) {
+			worker.worker.terminate();
+		});
+
+		// flush worker pool
+		this._workers = [];
+	}
+
+	_next = () => {
+		if (!this._queue.length) return;
+
+		let worker = this._getWorker();
+
+		if (!worker) {
+			setTimeout(this._next, 0);
+			return;
+		}
+
+		let task = this._queue.shift();
+
+		worker.run(task);
+	}
+
+	_onWorkerTaskComplete () {
+		this._next();
+	}
+
+	_flushIdleWorkers () {
+		this._workers = this._workers.filter(function (worker) {
+			if (worker.tasks.length === 0 && new Date() - worker.lastTaskTimestamp > this._idleTimeout) {
+				worker.worker.terminate();
+				return false;
+			} else {
+				return true;
+			}
+		}, this);
+	}
+
+	_getWorker () {
+		let idleWorkers = this._workers.filter(worker => worker.tasks.length === 0);
+
+		if (idleWorkers.length) {
+			return idleWorkers[0];
+		} else if (this._workers.length < this._maxWorkers) {
+			return this._createWorker();
+		} else {
+			return null;
+		}
+	}
+
+	_createWorker () {
+		let worker = new Worker({
+			onTaskComplete: this._onWorkerTaskComplete
+		}, this._WorkerProxy);
+
+		this._workers.push(worker);
+
+		return worker;
+	}
+}
+
+module.exports = WorkerManager;
