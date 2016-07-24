@@ -1,4 +1,4 @@
-/*! task.js - 0.0.5 - clientside */
+/*! task.js - 0.0.6 - clientside */
 var task =
 /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
@@ -48,29 +48,28 @@ var task =
 
 	'use strict';
 
-	var _WebWorkerProxy = __webpack_require__(1);
-
-	var _WebWorkerProxy2 = _interopRequireDefault(_WebWorkerProxy);
-
-	var _CompatibilityWorkerProxy = __webpack_require__(2);
-
-	var _CompatibilityWorkerProxy2 = _interopRequireDefault(_CompatibilityWorkerProxy);
-
-	var _WorkerManager = __webpack_require__(3);
+	var _WorkerManager = __webpack_require__(1);
 
 	var _WorkerManager2 = _interopRequireDefault(_WorkerManager);
 
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
 	var defaults = {
 		maxWorkers: navigator.hardwareConcurrency
 	};
 
+	var WorkerProxy;
+	if (typeof Worker != 'undefined' && (window.URL || window.webkitURL)) {
+		WorkerProxy = __webpack_require__(3);
+	} else {
+		WorkerProxy = __webpack_require__(4);
+	}
+
 	// expose default instance directly
-	module.exports = new _WorkerManager2.default(defaults, window.Worker && (window.URL || window.webkitURL) ? _WebWorkerProxy2.default : _CompatibilityWorkerProxy2.default);
+	module.exports = new _WorkerManager2['default'](defaults, WorkerProxy);
 
 	// allow custom settings (task.js factory)
-	module.exports.defaults = function ($config, WorkerProxy) {
+	module.exports.defaults = function ($config, WorkerProxyOverride) {
 		var config = {};
 
 		// clone defaults
@@ -83,11 +82,255 @@ var task =
 			return config[key] = $config[key];
 		});
 
-		return new _WorkerManager2.default(config, WorkerProxy || _WebWorkerProxy2.default);
+		return new _WorkerManager2['default'](config, WorkerProxyOverride || WorkerProxy);
 	};
 
 /***/ },
 /* 1 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	var _Worker = __webpack_require__(2);
+
+	var _Worker2 = _interopRequireDefault(_Worker);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	var WorkerManager = function () {
+		function WorkerManager($config, WorkerProxy) {
+			var _this = this;
+
+			_classCallCheck(this, WorkerManager);
+
+			this._next = function () {
+				if (!_this._queue.length) return;
+
+				var worker = _this._getWorker();
+
+				if (!worker) {
+					setTimeout(_this._next, 0);
+					return;
+				}
+
+				var task = _this._queue.shift();
+
+				worker.run(task);
+			};
+
+			$config = $config || {};
+
+			this._WorkerProxy = WorkerProxy;
+
+			this._maxWorkers = $config.maxWorkers || 4;
+			this._idleTimeout = $config.idleTimeout === false ? false : $config.idleTimeout || 10000;
+			this._idleCheckInterval = $config.idleCheckInterval || 1000;
+
+			this._workers = [];
+			this._queue = [];
+			this._onWorkerTaskComplete = this._onWorkerTaskComplete.bind(this);
+			this._flushIdleWorkers = this._flushIdleWorkers.bind(this);
+		}
+
+		_createClass(WorkerManager, [{
+			key: 'run',
+			value: function run(task) {
+				if (this._idleTimeout && typeof this._idleCheckIntervalID !== 'number') {
+					this._idleCheckIntervalID = setInterval(this._flushIdleWorkers, this._idleCheckInterval);
+				}
+
+				if (!task.arguments || typeof task.arguments.length === 'undefined') {
+					throw new Error('task.js: "arguments" is required property, and it must be an array/array-like');
+				}
+
+				if (!task['function'] && (typeof task['function'] !== 'function' || typeof task['function'] !== 'string')) {
+					throw new Error('task.js: "function" is required property, and it must be a string or a function');
+				}
+
+				if (_typeof(task.arguments) === 'object') {
+					task.arguments = Array.prototype.slice.call(task.arguments);
+				}
+
+				return new Promise(function (resolve, reject) {
+					// kind of a hack
+					task.resolve = resolve;
+					task.reject = reject;
+					this._queue.push(task);
+					this._next();
+				}.bind(this));
+			}
+		}, {
+			key: 'wrap',
+			value: function wrap(func) {
+				return function () {
+					return this.run({
+						arguments: Array.from(arguments),
+						'function': func
+					});
+				}.bind(this);
+			}
+		}, {
+			key: 'terminate',
+			value: function terminate() {
+				// kill idle timeout (if it exists)
+				if (this._idleTimeout && typeof this._idleCheckIntervalID == 'number') {
+					clearInterval(this._idleCheckIntervalID);
+					this._idleCheckIntervalID = null;
+				}
+
+				// terminate all existing workers
+				this._workers.forEach(function (worker) {
+					worker.worker.terminate();
+				});
+
+				// flush worker pool
+				this._workers = [];
+			}
+		}, {
+			key: '_onWorkerTaskComplete',
+			value: function _onWorkerTaskComplete() {
+				this._next();
+			}
+		}, {
+			key: '_flushIdleWorkers',
+			value: function _flushIdleWorkers() {
+				this._workers = this._workers.filter(function (worker) {
+					if (worker.tasks.length === 0 && new Date() - worker.lastTaskTimestamp > this._idleTimeout) {
+						worker.worker.terminate();
+						return false;
+					} else {
+						return true;
+					}
+				}, this);
+			}
+		}, {
+			key: '_getWorker',
+			value: function _getWorker() {
+				var idleWorkers = this._workers.filter(function (worker) {
+					return worker.tasks.length === 0;
+				});
+
+				if (idleWorkers.length) {
+					return idleWorkers[0];
+				} else if (this._workers.length < this._maxWorkers) {
+					return this._createWorker();
+				} else {
+					return null;
+				}
+			}
+		}, {
+			key: '_createWorker',
+			value: function _createWorker() {
+				var worker = new _Worker2['default']({
+					onTaskComplete: this._onWorkerTaskComplete
+				}, this._WorkerProxy);
+
+				this._workers.push(worker);
+
+				return worker;
+			}
+		}]);
+
+		return WorkerManager;
+	}();
+
+	module.exports = WorkerManager;
+
+/***/ },
+/* 2 */
+/***/ function(module, exports) {
+
+	'use strict';
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	var Worker = function () {
+		function Worker($config, WorkerProxy) {
+			_classCallCheck(this, Worker);
+
+			this.worker = new WorkerProxy();
+			this.worker.addEventListener('message', this._onWorkerMessage.bind(this));
+			this.tasks = [];
+			this.lastTaskTimestamp = null;
+
+			this._onTaskComplete = $config.onTaskComplete;
+		}
+
+		_createClass(Worker, [{
+			key: '_generateTaskID',
+			value: function _generateTaskID() {
+				var id = Math.random(),
+				    exists = false;
+
+				this.tasks.some(function (task) {
+					if (task.id === true) {
+						exists = true;
+						return true;
+					}
+				});
+
+				return exists ? this._generateTaskID() : id;
+			}
+		}, {
+			key: '_onWorkerMessage',
+			value: function _onWorkerMessage(message) {
+				var taskIndex = null;
+
+				this.tasks.some(function (task, index) {
+					if (message.id === task.id) {
+						taskIndex = index;
+						return true;
+					}
+				});
+
+				if (taskIndex !== null) {
+					this.tasks[taskIndex].resolve(message.result);
+					this._onTaskComplete(this);
+					this.tasks.splice(taskIndex, 1);
+				}
+			}
+		}, {
+			key: 'run',
+			value: function run($options) {
+				var id = this._generateTaskID();
+
+				this.lastTaskTimestamp = new Date();
+
+				this.tasks.push({
+					id: id,
+					resolve: $options.resolve,
+					reject: $options.reject
+				});
+
+				var message = {
+					id: id,
+					func: String($options['function'])
+				};
+
+				// because of transferables (we want to keep this object flat)
+				Object.keys($options.arguments).forEach(function (key, index) {
+					message['argument' + index] = $options.arguments[index];
+				});
+
+				this.worker.postMessage(message, $options.transferables);
+			}
+		}]);
+
+		return Worker;
+	}();
+
+	module.exports = Worker;
+
+/***/ },
+/* 3 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -164,12 +407,14 @@ var task =
 	module.exports = WebWorkerProxy;
 
 /***/ },
-/* 2 */
+/* 4 */
 /***/ function(module, exports) {
 
 	'use strict';
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -191,6 +436,7 @@ var task =
 			};
 
 			this._listeners = {};
+			this._setTimeoutID = null;
 		}
 
 		_createClass(CompatibilityWorkerProxy, [{
@@ -205,7 +451,7 @@ var task =
 				var _this2 = this;
 
 				// toss it out of the event loop
-				setTimeout(function () {
+				this._setTimeoutID = setTimeout(function () {
 					var args = Object.keys(message).filter(function (key) {
 						return key.match(/^argument/);
 					}).sort(function (a, b) {
@@ -214,13 +460,20 @@ var task =
 						return message[key];
 					});
 
-					_this2._onMessage({ id: message.id, result: eval('(' + message.func + ')').apply(null, args) });
+					var functionBody = message.func.substring(message.func.indexOf('{') + 1, message.func.lastIndexOf('}')),
+					    argNames = message.func.substring(message.func.indexOf('(') + 1, message.func.indexOf(')')).split(',');
+
+					// we cant use eval
+					var result = new (Function.prototype.bind.apply(Function, [null].concat(_toConsumableArray(argNames), [functionBody])))().apply(undefined, _toConsumableArray(args));
+
+					_this2._onMessage({ id: message.id, result: result });
 				}, 1);
 			}
 		}, {
 			key: 'terminate',
 			value: function terminate() {
-				this._worker.terminate();
+				clearTimeout(this._setTimeoutID);
+				this._setTimeoutID = null;
 			}
 		}]);
 
@@ -228,236 +481,6 @@ var task =
 	}();
 
 	module.exports = CompatibilityWorkerProxy;
-
-/***/ },
-/* 3 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-	var _Worker = __webpack_require__(4);
-
-	var _Worker2 = _interopRequireDefault(_Worker);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-	var WorkerManager = function () {
-		function WorkerManager($config, WorkerProxy) {
-			var _this = this;
-
-			_classCallCheck(this, WorkerManager);
-
-			this._next = function () {
-				if (!_this._queue.length) return;
-
-				var worker = _this._getWorker();
-
-				if (!worker) {
-					setTimeout(_this._next, 0);
-					return;
-				}
-
-				var task = _this._queue.shift();
-
-				worker.run(task);
-			};
-
-			$config = $config || {};
-
-			this._WorkerProxy = WorkerProxy;
-
-			this._maxWorkers = $config.maxWorkers || 4;
-			this._idleTimeout = $config.idleTimeout === false ? false : $config.idleTimeout || 10000;
-			this._idleCheckInterval = $config.idleCheckInterval || 1000;
-
-			this._workers = [];
-			this._queue = [];
-			this._onWorkerTaskComplete = this._onWorkerTaskComplete.bind(this);
-			this._flushIdleWorkers = this._flushIdleWorkers.bind(this);
-		}
-
-		_createClass(WorkerManager, [{
-			key: 'run',
-			value: function run(task) {
-				if (this._idleTimeout && typeof this._idleCheckIntervalID !== 'number') {
-					this._idleCheckIntervalID = setInterval(this._flushIdleWorkers, this._idleCheckInterval);
-				}
-
-				return new Promise(function (resolve, reject) {
-					// kind of a hack
-					task.resolve = resolve;
-					task.reject = reject;
-					this._queue.push(task);
-					this._next();
-				}.bind(this));
-			}
-		}, {
-			key: 'wrap',
-			value: function wrap(func) {
-				return function () {
-					return this.run({
-						arguments: Array.from(arguments),
-						function: func
-					});
-				}.bind(this);
-			}
-		}, {
-			key: 'terminate',
-			value: function terminate() {
-				// kill idle timeout (if it exists)
-				if (this._idleTimeout && typeof this._idleCheckIntervalID == 'number') {
-					clearInterval(this._idleCheckIntervalID);
-					this._idleCheckIntervalID = null;
-				}
-
-				// terminate all existing workers
-				this._workers.forEach(function (worker) {
-					worker.worker.terminate();
-				});
-
-				// flush worker pool
-				this._workers = [];
-			}
-		}, {
-			key: '_onWorkerTaskComplete',
-			value: function _onWorkerTaskComplete() {
-				this._next();
-			}
-		}, {
-			key: '_flushIdleWorkers',
-			value: function _flushIdleWorkers() {
-				this._workers = this._workers.filter(function (worker) {
-					if (worker.tasks.length === 0 && new Date() - worker.lastTaskTimestamp > this._idleTimeout) {
-						worker.worker.terminate();
-						return false;
-					} else {
-						return true;
-					}
-				}, this);
-			}
-		}, {
-			key: '_getWorker',
-			value: function _getWorker() {
-				var idleWorkers = this._workers.filter(function (worker) {
-					return worker.tasks.length === 0;
-				});
-
-				if (idleWorkers.length) {
-					return idleWorkers[0];
-				} else if (this._workers.length < this._maxWorkers) {
-					return this._createWorker();
-				} else {
-					return null;
-				}
-			}
-		}, {
-			key: '_createWorker',
-			value: function _createWorker() {
-				var worker = new _Worker2.default({
-					onTaskComplete: this._onWorkerTaskComplete
-				}, this._WorkerProxy);
-
-				this._workers.push(worker);
-
-				return worker;
-			}
-		}]);
-
-		return WorkerManager;
-	}();
-
-	module.exports = WorkerManager;
-
-/***/ },
-/* 4 */
-/***/ function(module, exports) {
-
-	'use strict';
-
-	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-	var Worker = function () {
-		function Worker($config, WorkerProxy) {
-			_classCallCheck(this, Worker);
-
-			this.worker = new WorkerProxy();
-			this.worker.addEventListener('message', this._onWorkerMessage.bind(this));
-			this.tasks = [];
-			this.lastTaskTimestamp = null;
-
-			this._onTaskComplete = $config.onTaskComplete;
-		}
-
-		_createClass(Worker, [{
-			key: '_generateTaskID',
-			value: function _generateTaskID() {
-				var id = Math.random(),
-				    exists = false;
-
-				this.tasks.some(function (task) {
-					if (task.id === true) {
-						exists = true;
-						return true;
-					}
-				});
-
-				return exists ? this._generateTaskID() : id;
-			}
-		}, {
-			key: '_onWorkerMessage',
-			value: function _onWorkerMessage(message) {
-				var taskIndex = null;
-
-				this.tasks.some(function (task, index) {
-					if (message.id === task.id) {
-						taskIndex = index;
-						return true;
-					}
-				});
-
-				if (taskIndex !== null) {
-					this.tasks[taskIndex].resolve(message.result);
-					this._onTaskComplete(this);
-					this.tasks.splice(taskIndex, 1);
-				}
-			}
-		}, {
-			key: 'run',
-			value: function run($options) {
-				var id = this._generateTaskID();
-
-				this.lastTaskTimestamp = new Date();
-
-				this.tasks.push({
-					id: id,
-					resolve: $options.resolve,
-					reject: $options.reject
-				});
-
-				var message = {
-					id: id,
-					func: String($options.function)
-				};
-
-				// because of transferables (we want to keep this object flat)
-				Object.keys($options.arguments).forEach(function (key, index) {
-					message['argument' + index] = $options.arguments[index];
-				});
-
-				this.worker.postMessage(message, $options.transferables);
-			}
-		}]);
-
-		return Worker;
-	}();
-
-	module.exports = Worker;
 
 /***/ }
 /******/ ]);

@@ -1,16 +1,21 @@
-import WebWorkerProxy from './WebWorkerProxy';
-import CompatibilityWorkerProxy from './CompatibilityWorkerProxy';
 import WorkerManager from '../WorkerManager';
 
 const defaults = {
 	maxWorkers: navigator.hardwareConcurrency
 };
 
+var WorkerProxy;
+if (typeof Worker != 'undefined' && (window.URL || window.webkitURL)) {
+	WorkerProxy = require('./WebWorkerProxy');
+} else {
+	WorkerProxy = require('./CompatibilityWorkerProxy');
+}
+
 // expose default instance directly
-module.exports = new WorkerManager(defaults, window.Worker && (window.URL || window.webkitURL) ? WebWorkerProxy : CompatibilityWorkerProxy);
+module.exports = new WorkerManager(defaults, WorkerProxy);
 
 // allow custom settings (task.js factory)
-module.exports.defaults = function ($config, WorkerProxy) {
+module.exports.defaults = function ($config, WorkerProxyOverride) {
 	let config = {};
 
 	// clone defaults
@@ -19,5 +24,5 @@ module.exports.defaults = function ($config, WorkerProxy) {
 	// apply user settings
 	Object.keys($config).forEach(key => config[key] = $config[key]);
 
-	return new WorkerManager(config, WorkerProxy || WebWorkerProxy);
+	return new WorkerManager(config, WorkerProxyOverride || WorkerProxy);
 };

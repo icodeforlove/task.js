@@ -1,5 +1,6 @@
 import 'babel-polyfill';
-import Promise from 'bluebird';
+
+window.Promise = require('bluebird');
 
 import task from '../../src/client';
 import CompatibilityWorkerProxy from '../../src/client/CompatibilityWorkerProxy';

@@ -21,6 +21,18 @@ class WorkerManager {
 			this._idleCheckIntervalID = setInterval(this._flushIdleWorkers, this._idleCheckInterval);
 		}
 
+		if (!task.arguments || typeof task.arguments.length === 'undefined') {
+			throw new Error('task.js: "arguments" is required property, and it must be an array/array-like');
+		}
+
+		if (!task.function && (typeof task.function !== 'function' || typeof task.function !== 'string')) {
+			throw new Error('task.js: "function" is required property, and it must be a string or a function');
+		}
+
+		if (typeof task.arguments === 'object') {
+			task.arguments = Array.prototype.slice.call(task.arguments);
+		}
+
 		return new Promise(function (resolve, reject) {
 			// kind of a hack
 			task.resolve = resolve;

@@ -118,5 +118,29 @@ module.exports = function (task, Promise, CompatibilityWorkerProxy) {
 				done();
 			});
 		});
+
+		it('can terminate', function(done) {
+			let customTask = task.defaults({
+				maxWorkers: 1
+			}, CompatibilityWorkerProxy);
+
+			function pow(number) {
+				return Math.pow(number, 2);
+			}
+
+			var powAsync = customTask.wrap(pow);
+
+			var numbers = [];
+			for (var i = 0; i < 10; i++) {
+				numbers.push(i);
+			}
+
+			Promise.map(numbers, powAsync).then(function (numbers) {
+				expect(customTask._workers.length).toEqual(1);
+				customTask.terminate();
+				expect(customTask._workers.length).toEqual(0);
+				done();
+			});
+		});
 	}
 };

@@ -64,7 +64,7 @@ var Worker = function () {
 
 			var message = {
 				id: id,
-				func: String($options.function)
+				func: String($options['function'])
 			};
 
 			// because of transferables (we want to keep this object flat)

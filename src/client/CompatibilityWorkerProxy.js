@@ -1,6 +1,7 @@
 class CompatibilityWorkerProxy {
 	constructor () {
 		this._listeners = {};
+		this._setTimeoutID = null;
 	}
 
 	_onMessage = (event) => {
@@ -19,7 +20,7 @@ class CompatibilityWorkerProxy {
 
 	postMessage(message, options) {
 		// toss it out of the event loop
-		setTimeout(() => {
+		this._setTimeoutID = setTimeout(() => {
 			let args = Object.keys(message).filter(function (key) {
 				return key.match(/^argument/);
 			}).sort(function (a, b) {
@@ -28,12 +29,19 @@ class CompatibilityWorkerProxy {
 				return message[key];
 			});
 
-			this._onMessage({id: message.id, result: eval('(' + message.func + ')').apply(null, args)});
+			let functionBody = message.func.substring(message.func.indexOf('{') + 1, message.func.lastIndexOf('}')),
+				argNames = message.func.substring(message.func.indexOf('(') + 1, message.func.indexOf(')')).split(',');
+
+			// we cant use eval
+			let result = (new Function(...argNames, functionBody))(...args);
+
+			this._onMessage({id: message.id, result: result});
 		}, 1);
 	}
 
 	terminate () {
-		this._worker.terminate();
+		clearTimeout(this._setTimeoutID);
+		this._setTimeoutID = null;
 	}
 }
 

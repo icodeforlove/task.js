@@ -64,25 +64,25 @@ module.exports = function(config) {
 		// Windows XP Browsers
 		{platform: 'Windows XP', browserName: 'chrome', version: 'latest'},
 		{platform: 'Windows XP', browserName: 'firefox', version: 'latest'},
-		{platform: 'Windows XP', browserName: 'ie', version: 'latest'},
+		{platform: 'Windows XP', browserName: 'internet explorer', version: 'latest'},
 
 		// Windows 7 Browsers
 		{platform: 'Windows 7', browserName: 'chrome', version: 'latest'},
 		{platform: 'Windows 7', browserName: 'firefox', version: 'latest'},
 		{platform: 'Windows 7', browserName: 'opera', version: 'latest'},
-		{platform: 'Windows 7', browserName: 'ie', version: 'latest'},
+		{platform: 'Windows 7', browserName: 'internet explorer', version: 'latest'},
 
 		// Windows 8 Browsers
 		{platform: 'Windows 8', browserName: 'chrome', version: 'latest'},
 		{platform: 'Windows 8', browserName: 'firefox', version: 'latest'},
 		{platform: 'Windows 8', browserName: 'opera', version: 'latest'},
-		{platform: 'Windows 8', browserName: 'ie', version: 'latest'},
+		{platform: 'Windows 8', browserName: 'internet explorer', version: 'latest'},
 
 		// Windows 8.1 Browsers
 		{platform: 'Windows 8.1', browserName: 'chrome', version: 'latest'},
 		{platform: 'Windows 8.1', browserName: 'firefox', version: 'latest'},
 		{platform: 'Windows 8.1', browserName: 'opera', version: 'latest'},
-		{platform: 'Windows 8.1', browserName: 'ie', version: 'latest'},
+		{platform: 'Windows 8.1', browserName: 'internet explorer', version: 'latest'},
 
 		// Windows 10 Browsers
 		{platform: 'Windows 10', browserName: 'chrome', version: 'latest'},
@@ -95,13 +95,12 @@ module.exports = function(config) {
 
 		{platform: 'Windows 10', browserName: 'opera', version: 'latest'},
 
-		{platform: 'Windows 10', browserName: 'ie', version: 'latest'},
+		{platform: 'Windows 10', browserName: 'internet explorer', version: 'latest'},
 
 		// Linux Browsers
 		{platform: 'Linux', browserName: 'chrome', version: 'latest'},
 		{platform: 'Linux', browserName: 'firefox', version: 'latest'},
 		{platform: 'Linux', browserName: 'opera', version: 'latest'},
-
 	];
 
 	// generate launcher object
