@@ -7,5 +7,9 @@ process.on('message', (message) => {
 		return message[key];
 	});
 
-	process.send({id: message.id, result: eval('(' + message.func + ')').apply(null, args)});
+	try {
+		process.send({id: message.id, result: eval('(' + message.func + ')').apply(null, args)});
+	} catch (error) {
+		process.send({id: message.id, error: error.message});
+	}
 });

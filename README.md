@@ -22,7 +22,22 @@ Before using this module i want to expose the current performance issues
 
 Rule of thumb in node keep your object size under 150kb, and in the clientside version you can go crazy and send 40MB array buffers if transferables are supported.
 
-## basic usage
+## task.defaults (optional)
+
+You can override the defaults like this
+
+```javascript
+// overriding defaults (optional)
+var myCustomTask = task.defaults({
+	maxWorkers: 4, // (default: the system max, or 4 if it cant be resolved)
+	idleTimeout: 10000, // (default: 10000ms, pass null to disable)
+	idleCheckInterval: 1000 // (default: 1000ms)
+});
+```
+
+behind the scenes it's spreading your dynamic work across your cores
+
+## task.wrap
 
 You can wrap a function if the method signatures match, and it doesnt rely on any external variables.
 
@@ -40,22 +55,9 @@ powAsync(2).then(function (squaredNumber) {
 
 But keep in mind that your function cannot reference anything inside of your current scope because its running inside of a worker.
 
-# custom usage
+## task.run
 
-You can override the defaults like this
-
-```javascript
-// overriding defaults (optional)
-var myCustomTask = task.defaults({
-	maxWorkers: 4, // (default: the system max, or 4 if it cant be resolved)
-	idleTimeout: 10000, // (default: 10000ms, pass null to disable)
-	idleCheckInterval: 1000 // (default: 1000ms)
-});
-```
-
-behind the scenes it's spreading your dynamic work across your cores
-
-### transferables
+below is an example of using a transferable
 
 ```javascript
 var buffer = new ArrayBuffer();
@@ -69,6 +71,14 @@ task.run({
 }).then(function (buffer) {
 	console.log(buffer); // 4
 });
+```
+
+## task.terminate
+
+when you run terminate it will destroy all current workers in the pool, and throw an error on all outstanding work
+
+```javascript
+task.terminate();
 ```
 
 ## browser tests

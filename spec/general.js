@@ -119,6 +119,25 @@ module.exports = function (task, Promise, CompatibilityWorkerProxy) {
 			});
 		});
 
+		it('can handle an error', function(done) {
+			function pow(number) {
+				return Math.pow(number, undefinedVar);
+			}
+
+			var powAsync = task.wrap(pow);
+
+			var numbers = [];
+			for (var i = 0; i < 10; i++) {
+				numbers.push(i);
+			}
+
+			Promise.map(numbers, powAsync).then(function (numbers) {
+			}, function (error) {
+				expect(!!error.toString().match(/undefinedVar/)).toEqual(true);
+				done();
+			});
+		});
+
 		it('can terminate', function(done) {
 			let customTask = task.defaults({
 				maxWorkers: 1

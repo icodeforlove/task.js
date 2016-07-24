@@ -44,7 +44,12 @@ var Worker = function () {
 			});
 
 			if (taskIndex !== null) {
-				this.tasks[taskIndex].resolve(message.result);
+				var task = this.tasks[taskIndex];
+				if (message.error) {
+					task.reject(new Error('task.js: ' + message.error));
+				} else {
+					task.resolve(message.result);
+				}
 				this._onTaskComplete(this);
 				this.tasks.splice(taskIndex, 1);
 			}
@@ -73,6 +78,15 @@ var Worker = function () {
 			});
 
 			this.worker.postMessage(message, $options.transferables);
+		}
+	}, {
+		key: 'terminate',
+		value: function terminate() {
+			this.tasks.forEach(function (task) {
+				return task.reject('terminated');
+			});
+			this.tasks = [];
+			this.worker.terminate();
 		}
 	}]);
 

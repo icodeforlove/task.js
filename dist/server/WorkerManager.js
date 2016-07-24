@@ -95,7 +95,7 @@ var WorkerManager = function () {
 
 			// terminate all existing workers
 			this._workers.forEach(function (worker) {
-				worker.worker.terminate();
+				worker.terminate();
 			});
 
 			// flush worker pool
@@ -111,7 +111,7 @@ var WorkerManager = function () {
 		value: function _flushIdleWorkers() {
 			this._workers = this._workers.filter(function (worker) {
 				if (worker.tasks.length === 0 && new Date() - worker.lastTaskTimestamp > this._idleTimeout) {
-					worker.worker.terminate();
+					worker.terminate();
 					return false;
 				} else {
 					return true;

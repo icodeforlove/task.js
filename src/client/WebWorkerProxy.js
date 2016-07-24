@@ -19,7 +19,11 @@ class WebWorkerProxy {
 				return message[key];
 			});
 
-			postMessage({id: message.id, result: eval('(' + message.func + ')').apply(null, args)});
+			try {
+				postMessage({id: message.id, result: eval('(' + message.func + ')').apply(null, args)});
+			} catch (error) {
+				postMessage({id: message.id, error: error.message});
+			}
 		}
 	}`;
 

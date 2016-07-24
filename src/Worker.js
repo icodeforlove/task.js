@@ -33,7 +33,12 @@ class Worker {
 		});
 
 		if (taskIndex !== null) {
-			this.tasks[taskIndex].resolve(message.result);
+			var task = this.tasks[taskIndex];
+			if (message.error) {
+				task.reject(new Error(`task.js: ${message.error}`));
+			} else {
+				task.resolve(message.result);
+			}
 			this._onTaskComplete(this);
 			this.tasks.splice(taskIndex, 1);
 		}
@@ -61,6 +66,12 @@ class Worker {
 		});
 
 		this.worker.postMessage(message, $options.transferables);
+	}
+
+	terminate () {
+		this.tasks.forEach(task => task.reject('terminated'));
+		this.tasks = [];
+		this.worker.terminate();
 	}
 }
 

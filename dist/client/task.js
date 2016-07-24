@@ -1,4 +1,4 @@
-/*! task.js - 0.0.6 - clientside */
+/*! task.js - 0.0.7 - clientside */
 var task =
 /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
@@ -234,7 +234,7 @@ var task =
 
 				// terminate all existing workers
 				this._workers.forEach(function (worker) {
-					worker.worker.terminate();
+					worker.terminate();
 				});
 
 				// flush worker pool
@@ -250,7 +250,7 @@ var task =
 			value: function _flushIdleWorkers() {
 				this._workers = this._workers.filter(function (worker) {
 					if (worker.tasks.length === 0 && new Date() - worker.lastTaskTimestamp > this._idleTimeout) {
-						worker.worker.terminate();
+						worker.terminate();
 						return false;
 					} else {
 						return true;
@@ -340,7 +340,12 @@ var task =
 				});
 
 				if (taskIndex !== null) {
-					this.tasks[taskIndex].resolve(message.result);
+					var task = this.tasks[taskIndex];
+					if (message.error) {
+						task.reject(new Error('task.js: ' + message.error));
+					} else {
+						task.resolve(message.result);
+					}
 					this._onTaskComplete(this);
 					this.tasks.splice(taskIndex, 1);
 				}
@@ -369,6 +374,15 @@ var task =
 				});
 
 				this.worker.postMessage(message, $options.transferables);
+			}
+		}, {
+			key: 'terminate',
+			value: function terminate() {
+				this.tasks.forEach(function (task) {
+					return task.reject('terminated');
+				});
+				this.tasks = [];
+				this.worker.terminate();
 			}
 		}]);
 
@@ -399,7 +413,7 @@ var task =
 
 			_classCallCheck(this, WebWorkerProxy);
 
-			this.WORKER_SOURCE = 'function () {\n\t\tonmessage = function (event) {\n\t\t\tvar message = event.data;\n\n\t\t\tvar args = Object.keys(message).filter(function (key) {\n\t\t\t\treturn key.match(/^argument/);\n\t\t\t}).sort(function (a, b) {\n\t\t\t\treturn parseInt(a.slice(8), 10) - parseInt(b.slice(8), 10);\n\t\t\t}).map(function (key) {\n\t\t\t\treturn message[key];\n\t\t\t});\n\n\t\t\tpostMessage({id: message.id, result: eval(\'(\' + message.func + \')\').apply(null, args)});\n\t\t}\n\t}';
+			this.WORKER_SOURCE = 'function () {\n\t\tonmessage = function (event) {\n\t\t\tvar message = event.data;\n\n\t\t\tvar args = Object.keys(message).filter(function (key) {\n\t\t\t\treturn key.match(/^argument/);\n\t\t\t}).sort(function (a, b) {\n\t\t\t\treturn parseInt(a.slice(8), 10) - parseInt(b.slice(8), 10);\n\t\t\t}).map(function (key) {\n\t\t\t\treturn message[key];\n\t\t\t});\n\n\t\t\ttry {\n\t\t\t\tpostMessage({id: message.id, result: eval(\'(\' + message.func + \')\').apply(null, args)});\n\t\t\t} catch (error) {\n\t\t\t\tpostMessage({id: message.id, error: error.message});\n\t\t\t}\n\t\t}\n\t}';
 
 			this._onMessage = function (event) {
 				var message = event.data;
