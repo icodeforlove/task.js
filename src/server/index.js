@@ -6,8 +6,6 @@ const defaults = {
 	maxWorkers: os.cpus().length
 };
 
-var m = new WorkerManager(defaults, NodeWorkerProxy);
-
 // expose default instance directly
 module.exports = new WorkerManager(defaults, NodeWorkerProxy);
 
