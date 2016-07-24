@@ -1,4 +1,4 @@
-# task.js [![Build Status](https://travis-ci.org/icodeforlove/task.js.png?branch=master)](https://travis-ci.org/icodeforlove/task.js)
+# task.js [![Build Status](https://travis-ci.org/icodeforlove/task.js.svg?branch=master)](https://travis-ci.org/icodeforlove/task.js)
 
 This modules is intended to make working with blocking tasks a bit easier, and is meant to work in node as well as the browser.
 
