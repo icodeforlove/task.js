@@ -5,12 +5,12 @@
   "main": "index.js",
   "scripts": {
     "test": "./node_modules/.bin/jasmine ./spec/server/index.js; ./node_modules/.bin/karma start ./spec/support/karma.js --single-run",
-    "build": "./node_modules/.bin/webpack; ./node_modules/.bin/babel src -d dist/server",
-    "prepublish": "npm run build"
+    "build": "./node_modules/.bin/webpack; ./node_modules/.bin/babel src -d dist/server"
   },
   "author": "Chad Scira <chadvscira@gmail.com>",
   "license": "ISC",
   "devDependencies": {
+    "babel-cli": "^6.11.4",
     "babel-core": "^6.11.4",
     "babel-loader": "^6.2.4",
     "babel-plugin-transform-class-properties": "^6.10.2",

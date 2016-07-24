@@ -2,6 +2,13 @@
 
 This modules is intended to make working with blocking tasks a bit easier, and is meant to work in node as well as the browser.
 
+## install
+
+```
+	npm install task.js
+	bower install task
+```
+
 ## important
 
 Before using this module i want to expose the current performance issues
@@ -46,15 +53,15 @@ var myCustomTask = task.defaults({
 });
 ```
 
-### transferables
-
 behind the scenes it's spreading your dynamic work across your cores
+
+### transferables
 
 ```javascript
 var buffer = new ArrayBuffer();
 
 task.run({
-	arguments: {buffer: buffer, otherData: 123},
+	arguments: [buffer, 1234],
 	transferables: [buffer] // optional, and only supported client-side
 	function: function (message) {
 		return message.buffer;
@@ -67,3 +74,4 @@ task.run({
 ## todo / help
 
 - for node add shm buffer support or something, we need a nice way to deal with spreading the cores across large chunks of data
+- add opensauce tests?
