@@ -18,8 +18,6 @@ var defaults = {
 	maxWorkers: _os2['default'].cpus().length
 };
 
-var m = new _WorkerManager2['default'](defaults, _NodeWorkerProxy2['default']);
-
 // expose default instance directly
 module.exports = new _WorkerManager2['default'](defaults, _NodeWorkerProxy2['default']);
 

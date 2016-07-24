@@ -205,21 +205,33 @@ var task =
 					task.arguments = Array.prototype.slice.call(task.arguments);
 				}
 
-				return new Promise(function (resolve, reject) {
-					// kind of a hack
-					task.resolve = resolve;
-					task.reject = reject;
+				if (!task.callback) {
+					return new Promise(function (resolve, reject) {
+						task.resolve = resolve;
+						task.reject = reject;
+						this._queue.push(task);
+						this._next();
+					}.bind(this));
+				} else {
 					this._queue.push(task);
 					this._next();
-				}.bind(this));
+				}
 			}
 		}, {
 			key: 'wrap',
 			value: function wrap(func) {
 				return function () {
+					var args = Array.from(arguments),
+					    callback = null;
+
+					if (typeof args[args.length - 1] === 'function') {
+						callback = args.splice(-1).pop();
+					}
+
 					return this.run({
-						arguments: Array.from(arguments),
-						'function': func
+						arguments: args,
+						'function': func,
+						callback: callback
 					});
 				}.bind(this);
 			}
@@ -342,9 +354,17 @@ var task =
 				if (taskIndex !== null) {
 					var task = this.tasks[taskIndex];
 					if (message.error) {
-						task.reject(new Error('task.js: ' + message.error));
+						if (task.callback) {
+							task.callback(new Error('task.js: ' + message.error));
+						} else {
+							task.reject(new Error('task.js: ' + message.error));
+						}
 					} else {
-						task.resolve(message.result);
+						if (task.callback) {
+							callback(null, message.result);
+						} else {
+							task.resolve(message.result);
+						}
 					}
 					this._onTaskComplete(this);
 					this.tasks.splice(taskIndex, 1);
@@ -360,7 +380,8 @@ var task =
 				this.tasks.push({
 					id: id,
 					resolve: $options.resolve,
-					reject: $options.reject
+					reject: $options.reject,
+					callback: $options.callback
 				});
 
 				var message = {
@@ -379,7 +400,11 @@ var task =
 			key: 'terminate',
 			value: function terminate() {
 				this.tasks.forEach(function (task) {
-					return task.reject('terminated');
+					if (task.callback) {
+						task.callback('terminated');
+					} else {
+						task.reject('terminated');
+					}
 				});
 				this.tasks = [];
 				this.worker.terminate();

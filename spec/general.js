@@ -119,7 +119,7 @@ module.exports = function (task, Promise, CompatibilityWorkerProxy) {
 			});
 		});
 
-		it('can handle an error', function(done) {
+		it('can handle an error using promises', function(done) {
 			function pow(number) {
 				return Math.pow(number, undefinedVar);
 			}
@@ -133,6 +133,19 @@ module.exports = function (task, Promise, CompatibilityWorkerProxy) {
 
 			Promise.map(numbers, powAsync).then(function (numbers) {
 			}, function (error) {
+				expect(!!error.toString().match(/undefinedVar/)).toEqual(true);
+				done();
+			});
+		});
+
+		it('can handle an error using callbacks', function(done) {
+			function pow(number) {
+				return Math.pow(number, undefinedVar);
+			}
+
+			var powAsync = task.wrap(pow);
+
+			powAsync(1, function (error, number) {
 				expect(!!error.toString().match(/undefinedVar/)).toEqual(true);
 				done();
 			});

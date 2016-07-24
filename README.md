@@ -22,6 +22,25 @@ Before using this module i want to expose the current performance issues
 
 Rule of thumb in node keep your object size under 150kb, and in the clientside version you can go crazy and send 40MB array buffers if transferables are supported.
 
+## callbacks and promises
+
+task.js supports both styles
+
+```javascript
+var powAsync = task.wrap(pow);
+
+// callbacks
+pow(2, function (error, result) {
+
+});
+
+// promises
+pow(2).then(
+	function (result) {},
+	function (error) {}
+);
+```
+
 ## task.defaults (optional)
 
 You can override the defaults like this

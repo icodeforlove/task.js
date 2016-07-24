@@ -33,20 +33,32 @@ class WorkerManager {
 			task.arguments = Array.prototype.slice.call(task.arguments);
 		}
 
-		return new Promise(function (resolve, reject) {
-			// kind of a hack
-			task.resolve = resolve;
-			task.reject = reject;
+		if (!task.callback) {
+			return new Promise(function (resolve, reject) {
+				task.resolve = resolve;
+				task.reject = reject;
+				this._queue.push(task);
+				this._next();
+			}.bind(this));
+		} else {
 			this._queue.push(task);
 			this._next();
-		}.bind(this));
+		}
 	}
 
 	wrap (func) {
 		return function () {
+			var args = Array.from(arguments),
+				callback = null;
+
+			if (typeof args[args.length - 1] === 'function') {
+				callback = args.splice(-1).pop();
+			}
+
 			return this.run({
-				arguments: Array.from(arguments),
-				function: func
+				arguments: args,
+				function: func,
+				callback: callback
 			});
 		}.bind(this);
 	}

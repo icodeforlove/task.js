@@ -46,9 +46,17 @@ var Worker = function () {
 			if (taskIndex !== null) {
 				var task = this.tasks[taskIndex];
 				if (message.error) {
-					task.reject(new Error('task.js: ' + message.error));
+					if (task.callback) {
+						task.callback(new Error('task.js: ' + message.error));
+					} else {
+						task.reject(new Error('task.js: ' + message.error));
+					}
 				} else {
-					task.resolve(message.result);
+					if (task.callback) {
+						callback(null, message.result);
+					} else {
+						task.resolve(message.result);
+					}
 				}
 				this._onTaskComplete(this);
 				this.tasks.splice(taskIndex, 1);
@@ -64,7 +72,8 @@ var Worker = function () {
 			this.tasks.push({
 				id: id,
 				resolve: $options.resolve,
-				reject: $options.reject
+				reject: $options.reject,
+				callback: $options.callback
 			});
 
 			var message = {
@@ -83,7 +92,11 @@ var Worker = function () {
 		key: 'terminate',
 		value: function terminate() {
 			this.tasks.forEach(function (task) {
-				return task.reject('terminated');
+				if (task.callback) {
+					task.callback('terminated');
+				} else {
+					task.reject('terminated');
+				}
 			});
 			this.tasks = [];
 			this.worker.terminate();
