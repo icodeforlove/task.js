@@ -71,6 +71,10 @@ task.run({
 });
 ```
 
+## browser tests
+
+[![Selenium Test Status](https://saucelabs.com/browser-matrix/task-js.svg)](https://saucelabs.com/u/task-js)
+
 ## todo / help
 
 - for node add shm buffer support or something, we need a nice way to deal with spreading the cores across large chunks of data
