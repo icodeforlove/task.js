@@ -1,4 +1,4 @@
-/*! task.js - 0.0.3 - clientside */
+/*! task.js - 0.0.5 - clientside */
 var task =
 /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
@@ -67,7 +67,7 @@ var task =
 	};
 
 	// expose default instance directly
-	module.exports = new _WorkerManager2.default(defaults, window.Worker ? _WebWorkerProxy2.default : _CompatibilityWorkerProxy2.default);
+	module.exports = new _WorkerManager2.default(defaults, window.Worker && (window.URL || window.webkitURL) ? _WebWorkerProxy2.default : _CompatibilityWorkerProxy2.default);
 
 	// allow custom settings (task.js factory)
 	module.exports.defaults = function ($config, WorkerProxy) {
