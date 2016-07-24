@@ -1,11 +1,11 @@
 {
   "name": "task.js",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Simplified interface for getting code to run on different cores (node.js, and web)",
   "main": "index.js",
   "scripts": {
     "test": "./node_modules/.bin/jasmine ./spec/server/index.js; ./node_modules/.bin/karma start ./spec/support/karma.js --single-run",
-    "build": "./node_modules/.bin/webpack; ./node_modules/.bin/babel src -d dist/server"
+    "build": "rm ./dist; ./node_modules/.bin/webpack; ./node_modules/.bin/babel src -d dist/server"
   },
   "author": "Chad Scira <chadvscira@gmail.com>",
   "license": "ISC",
