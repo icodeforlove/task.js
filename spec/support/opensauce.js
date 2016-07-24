@@ -23,31 +23,19 @@ module.exports = function(config) {
 
 		// Mac 10.10 Browsers
 		{platform: 'Mac 10.10', browserName: 'chrome', version: 'latest'},
-		{platform: 'Mac 10.10', browserName: 'chrome', version: 'latest-1'},
-		{platform: 'Mac 10.10', browserName: 'chrome', version: 'latest-2'},
-
 		{platform: 'Mac 10.10', browserName: 'firefox', version: 'latest'},
-		{platform: 'Mac 10.10', browserName: 'firefox', version: 'latest-1'},
-		{platform: 'Mac 10.10', browserName: 'firefox', version: 'latest-2'},
-
 		{platform: 'Mac 10.10', browserName: 'safari', version: 'latest'},
 
 		// Mac 10.9 Browsers
 		{platform: 'Mac 10.9', browserName: 'chrome', version: 'latest'},
-		{platform: 'Mac 10.9', browserName: 'chrome', version: 'latest-1'},
-		{platform: 'Mac 10.9', browserName: 'chrome', version: 'latest-2'},
-
 		{platform: 'Mac 10.9', browserName: 'firefox', version: 'latest'},
-		{platform: 'Mac 10.9', browserName: 'firefox', version: 'latest-1'},
-		{platform: 'Mac 10.9', browserName: 'firefox', version: 'latest-2'},
-
 		{platform: 'Mac 10.9', browserName: 'safari', version: 'latest'},
 
 		// Android 5.1
-		{platformName: 'Android', deviceName: 'Android Emulator', platformVersion: '5.1', browserName: 'Browser'},
+		//{platformName: 'Android', deviceName: 'Android Emulator', platformVersion: '5.1', browserName: 'Browser'},
 
 		// Android 5.0
-		{platformName: 'Android', deviceName: 'Android Emulator', platformVersion: '5.0', browserName: 'Browser'},
+		//{platformName: 'Android', deviceName: 'Android Emulator', platformVersion: '5.0', browserName: 'Browser'},
 
 		// // Android 4.4
 		// {platformName: 'Android', deviceName: 'Android Emulator', platformVersion: '4.4', browserName: 'Browser'},
@@ -75,54 +63,25 @@ module.exports = function(config) {
 
 		// Windows XP Browsers
 		{platform: 'Windows XP', browserName: 'chrome', version: 'latest'},
-		{platform: 'Windows XP', browserName: 'chrome', version: 'latest-1'},
-		{platform: 'Windows XP', browserName: 'chrome', version: 'latest-2'},
-
 		{platform: 'Windows XP', browserName: 'firefox', version: 'latest'},
-		{platform: 'Windows XP', browserName: 'firefox', version: 'latest-1'},
-		{platform: 'Windows XP', browserName: 'firefox', version: 'latest-2'},
-
-		{platform: 'Windows XP', browserName: 'opera', version: 'latest'},
-
 		{platform: 'Windows XP', browserName: 'ie', version: 'latest'},
 
 		// Windows 7 Browsers
 		{platform: 'Windows 7', browserName: 'chrome', version: 'latest'},
-		{platform: 'Windows 7', browserName: 'chrome', version: 'latest-1'},
-		{platform: 'Windows 7', browserName: 'chrome', version: 'latest-2'},
-
 		{platform: 'Windows 7', browserName: 'firefox', version: 'latest'},
-		{platform: 'Windows 7', browserName: 'firefox', version: 'latest-1'},
-		{platform: 'Windows 7', browserName: 'firefox', version: 'latest-2'},
-
 		{platform: 'Windows 7', browserName: 'opera', version: 'latest'},
-
 		{platform: 'Windows 7', browserName: 'ie', version: 'latest'},
 
 		// Windows 8 Browsers
 		{platform: 'Windows 8', browserName: 'chrome', version: 'latest'},
-		{platform: 'Windows 8', browserName: 'chrome', version: 'latest-1'},
-		{platform: 'Windows 8', browserName: 'chrome', version: 'latest-2'},
-
 		{platform: 'Windows 8', browserName: 'firefox', version: 'latest'},
-		{platform: 'Windows 8', browserName: 'firefox', version: 'latest-1'},
-		{platform: 'Windows 8', browserName: 'firefox', version: 'latest-2'},
-
 		{platform: 'Windows 8', browserName: 'opera', version: 'latest'},
-
 		{platform: 'Windows 8', browserName: 'ie', version: 'latest'},
 
 		// Windows 8.1 Browsers
 		{platform: 'Windows 8.1', browserName: 'chrome', version: 'latest'},
-		{platform: 'Windows 8.1', browserName: 'chrome', version: 'latest-1'},
-		{platform: 'Windows 8.1', browserName: 'chrome', version: 'latest-2'},
-
 		{platform: 'Windows 8.1', browserName: 'firefox', version: 'latest'},
-		{platform: 'Windows 8.1', browserName: 'firefox', version: 'latest-1'},
-		{platform: 'Windows 8.1', browserName: 'firefox', version: 'latest-2'},
-
 		{platform: 'Windows 8.1', browserName: 'opera', version: 'latest'},
-
 		{platform: 'Windows 8.1', browserName: 'ie', version: 'latest'},
 
 		// Windows 10 Browsers
@@ -140,13 +99,7 @@ module.exports = function(config) {
 
 		// Linux Browsers
 		{platform: 'Linux', browserName: 'chrome', version: 'latest'},
-		{platform: 'Linux', browserName: 'chrome', version: 'latest-1'},
-		{platform: 'Linux', browserName: 'chrome', version: 'latest-2'},
-
 		{platform: 'Linux', browserName: 'firefox', version: 'latest'},
-		{platform: 'Linux', browserName: 'firefox', version: 'latest-1'},
-		{platform: 'Linux', browserName: 'firefox', version: 'latest-2'},
-
 		{platform: 'Linux', browserName: 'opera', version: 'latest'},
 
 	];
@@ -225,9 +178,9 @@ module.exports = function(config) {
 		},
 
 		// Increase timeout in case connection in CI is slow
-		captureTimeout: 240000,
-		browserDisconnectTimeout: 120000,
-		browserNoActivityTimeout: 240000,
+		captureTimeout: 60000 * 5,
+		browserDisconnectTimeout: 60000 * 5,
+		browserNoActivityTimeout: 60000 * 5,
 		customLaunchers: customLaunchers,
 		browsers: Object.keys(customLaunchers),
 		singleRun: true,
