@@ -58,7 +58,7 @@ module.exports = function(config) {
 		//{platformName: 'iOS', deviceName: 'iPad Simulator', platformVersion: '8.1', browserName: 'Safari'},
 
 		// iOS 7.0
-		{platformName: 'iOS', deviceName: 'iPhone Simulator', platformVersion: '7.0', browserName: 'Safari'},
+		{platformName: 'iOS', deviceName: 'iPhone Simulator', platformVersion: '7.0', browserName: 'Safari', appiumVersion: '1.5.2'},
 		//{platformName: 'iOS', deviceName: 'iPad Simulator', platformVersion: '7.0', browserName: 'Safari'},
 
 		// Windows XP Browsers
@@ -111,8 +111,11 @@ module.exports = function(config) {
 			// add base to all browsers
 			launcher.base = 'SauceLabs';
 
+			// add defaults
 			if (launcher.deviceName) {
-				launcher.appiumVersion = '1.5.3';
+				if (!launcher.appiumVersion) {
+					launcher.appiumVersion = '1.5.3';
+				}
 				launcher.deviceOrientation = 'portrait';
 			}
 
