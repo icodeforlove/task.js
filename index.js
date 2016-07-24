@@ -1,1 +1,1 @@
-module.exports = require(__dirname + '/src/server/index.bundled.js');
+module.exports = require(__dirname + '/dist/server/server');
