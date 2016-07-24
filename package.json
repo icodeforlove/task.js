@@ -4,7 +4,8 @@
   "description": "Simplified interface for getting code to run on different cores (node.js, and web)",
   "main": "index.js",
   "scripts": {
-    "test": "./node_modules/.bin/jasmine ./spec/server/index.js; ./node_modules/.bin/karma start ./spec/support/karma.js --single-run",
+    "test": "./node_modules/.bin/jasmine ./spec/server/index.js; ./node_modules/.bin/karma start ./spec/support/opensauce.js --single-run",
+    "test-local": "./node_modules/.bin/jasmine ./spec/server/index.js; ./node_modules/.bin/karma start ./spec/support/karma.js --single-run",
     "build": "rm ./dist; ./node_modules/.bin/webpack; ./node_modules/.bin/babel src -d dist/server"
   },
   "author": "Chad Scira <chadvscira@gmail.com>",
@@ -23,6 +24,7 @@
     "karma-chrome-launcher": "^1.0.1",
     "karma-jasmine": "^1.0.2",
     "karma-phantomjs-launcher": "^1.0.1",
+    "karma-sauce-launcher": "^1.0.0",
     "karma-webpack": "^1.7.0",
     "webpack": "^1.13.1"
   }
