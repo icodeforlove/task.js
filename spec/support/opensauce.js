@@ -1,7 +1,5 @@
 var _ = require('lodash');
 
-const APPIUM_VERSION = '1.5.2';
-
 module.exports = function(config) {
 	if (!process.env.SAUCE_USERNAME || !process.env.SAUCE_ACCESS_KEY) {
 		console.log('Make sure the SAUCE_USERNAME and SAUCE_ACCESS_KEY environment variables are set.')
@@ -161,7 +159,7 @@ module.exports = function(config) {
 			launcher.base = 'SauceLabs';
 
 			if (launcher.deviceName) {
-				launcher.appiumVersion = '1.5.2';
+				launcher.appiumVersion = '1.5.3';
 				launcher.deviceOrientation = 'portrait';
 			}
 
@@ -236,6 +234,6 @@ module.exports = function(config) {
 
 		// Concurrency level
 		// how many browser should be started simultaneous
-		concurrency: 4
+		concurrency: 3
 	})
 }
