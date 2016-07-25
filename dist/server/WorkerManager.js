@@ -86,7 +86,9 @@ var WorkerManager = function () {
 				    callback = null;
 
 				if (typeof args[args.length - 1] === 'function') {
-					callback = args.splice(-1).pop();
+					// apparently splice is broken in ie8
+					callback = args.slice(-1).pop();
+					args = args.slice(0, -1);
 				}
 
 				return this.run({

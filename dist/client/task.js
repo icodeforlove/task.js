@@ -1,4 +1,4 @@
-/*! task.js - 0.0.7 - clientside */
+/*! task.js - 0.0.8 - clientside */
 var task =
 /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
@@ -225,7 +225,9 @@ var task =
 					    callback = null;
 
 					if (typeof args[args.length - 1] === 'function') {
-						callback = args.splice(-1).pop();
+						// apparently splice is broken in ie8
+						callback = args.slice(-1).pop();
+						args = args.slice(0, -1);
 					}
 
 					return this.run({
@@ -361,7 +363,7 @@ var task =
 						}
 					} else {
 						if (task.callback) {
-							callback(null, message.result);
+							task.callback(null, message.result);
 						} else {
 							task.resolve(message.result);
 						}
@@ -536,10 +538,15 @@ var task =
 					var functionBody = message.func.substring(message.func.indexOf('{') + 1, message.func.lastIndexOf('}')),
 					    argNames = message.func.substring(message.func.indexOf('(') + 1, message.func.indexOf(')')).split(',');
 
-					// we cant use eval
-					var result = new (Function.prototype.bind.apply(Function, [null].concat(_toConsumableArray(argNames), [functionBody])))().apply(undefined, _toConsumableArray(args));
+					var func = new (Function.prototype.bind.apply(Function, [null].concat(_toConsumableArray(argNames), [functionBody])))();
 
-					_this2._onMessage({ id: message.id, result: result });
+					// we cant use eval
+					try {
+						var result = func.apply(undefined, _toConsumableArray(args));
+						_this2._onMessage({ id: message.id, result: result });
+					} catch (error) {
+						_this2._onMessage({ id: message.id, 'error': error.message });
+					}
 				}, 1);
 			}
 		}, {

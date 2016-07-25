@@ -32,10 +32,15 @@ class CompatibilityWorkerProxy {
 			let functionBody = message.func.substring(message.func.indexOf('{') + 1, message.func.lastIndexOf('}')),
 				argNames = message.func.substring(message.func.indexOf('(') + 1, message.func.indexOf(')')).split(',');
 
-			// we cant use eval
-			let result = (new Function(...argNames, functionBody))(...args);
+			let func = (new Function(...argNames, functionBody));
 
-			this._onMessage({id: message.id, result: result});
+			// we cant use eval
+			try {
+				let result = func(...args);
+				this._onMessage({id: message.id, result: result});
+			} catch (error) {
+				this._onMessage({id: message.id, 'error': error.message});
+			}
 		}, 1);
 	}
 

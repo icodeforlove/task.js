@@ -51,10 +51,15 @@ var CompatibilityWorkerProxy = function () {
 				var functionBody = message.func.substring(message.func.indexOf('{') + 1, message.func.lastIndexOf('}')),
 				    argNames = message.func.substring(message.func.indexOf('(') + 1, message.func.indexOf(')')).split(',');
 
-				// we cant use eval
-				var result = new (Function.prototype.bind.apply(Function, [null].concat(_toConsumableArray(argNames), [functionBody])))().apply(undefined, _toConsumableArray(args));
+				var func = new (Function.prototype.bind.apply(Function, [null].concat(_toConsumableArray(argNames), [functionBody])))();
 
-				_this2._onMessage({ id: message.id, result: result });
+				// we cant use eval
+				try {
+					var result = func.apply(undefined, _toConsumableArray(args));
+					_this2._onMessage({ id: message.id, result: result });
+				} catch (error) {
+					_this2._onMessage({ id: message.id, 'error': error.message });
+				}
 			}, 1);
 		}
 	}, {

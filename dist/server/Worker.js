@@ -53,7 +53,7 @@ var Worker = function () {
 					}
 				} else {
 					if (task.callback) {
-						callback(null, message.result);
+						task.callback(null, message.result);
 					} else {
 						task.resolve(message.result);
 					}
