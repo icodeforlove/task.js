@@ -96,7 +96,20 @@ class WorkerManager {
 		worker.run(task);
 	}
 
-	_onWorkerTaskComplete () {
+	_onWorkerTaskComplete = () => {
+		this._next();
+	}
+
+	_onWorkerExit = (worker) => {
+		// purge dead worker from pool
+		this._workers = this._workers.filter(item => item != worker);
+
+		// add work back to queue
+		worker.tasks.forEach(task => {
+			this._queue.push(task.$options);
+		});
+
+		// run tick
 		this._next();
 	}
 
@@ -125,7 +138,8 @@ class WorkerManager {
 
 	_createWorker () {
 		let worker = new Worker({
-			onTaskComplete: this._onWorkerTaskComplete
+			onTaskComplete: this._onWorkerTaskComplete,
+			onExit: this._onWorkerExit
 		}, this._WorkerProxy);
 
 		this._workers.push(worker);

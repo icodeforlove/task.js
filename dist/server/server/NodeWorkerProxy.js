@@ -12,6 +12,21 @@ var NodeWorkerProxy = function () {
 
 		_classCallCheck(this, NodeWorkerProxy);
 
+		this._onExit = function () {
+			if (!_this._alive) {
+				return;
+			}
+
+			_this._alive = false;
+
+			var callbacks = _this._listeners.exit;
+			if (callbacks) {
+				callbacks.forEach(function (callback) {
+					return callback();
+				});
+			}
+		};
+
 		this._onMessage = function (message) {
 			var callbacks = _this._listeners.message;
 			if (callbacks) {
@@ -24,6 +39,11 @@ var NodeWorkerProxy = function () {
 		this._listeners = {};
 		this._worker = cp.fork(__dirname + '/NodeWorker.js');
 		this._worker.on('message', this._onMessage);
+		this._worker.on('exit', this._onExit);
+		this._worker.on('close', this._onExit);
+		this._worker.on('disconnect', this._onExit);
+		this._worker.on('error', this._onExit);
+		this._alive = true;
 	}
 
 	_createClass(NodeWorkerProxy, [{
@@ -40,6 +60,7 @@ var NodeWorkerProxy = function () {
 	}, {
 		key: 'terminate',
 		value: function terminate() {
+			this._listeners = {};
 			this._worker.kill();
 		}
 	}]);

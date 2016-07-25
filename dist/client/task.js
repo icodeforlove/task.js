@@ -1,4 +1,4 @@
-/*! task.js - 0.0.9 - clientside */
+/*! task.js - 0.0.10 - clientside */
 var task =
 /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
@@ -162,6 +162,25 @@ var task =
 				worker.run(task);
 			};
 
+			this._onWorkerTaskComplete = function () {
+				_this._next();
+			};
+
+			this._onWorkerExit = function (worker) {
+				// purge dead worker from pool
+				_this._workers = _this._workers.filter(function (item) {
+					return item != worker;
+				});
+
+				// add work back to queue
+				worker.tasks.forEach(function (task) {
+					_this._queue.push(task.$options);
+				});
+
+				// run tick
+				_this._next();
+			};
+
 			$config = $config || {};
 
 			this._WorkerProxy = WorkerProxy;
@@ -245,11 +264,6 @@ var task =
 				this._workers = [];
 			}
 		}, {
-			key: '_onWorkerTaskComplete',
-			value: function _onWorkerTaskComplete() {
-				this._next();
-			}
-		}, {
 			key: '_flushIdleWorkers',
 			value: function _flushIdleWorkers() {
 				this._workers = this._workers.filter(function (worker) {
@@ -280,7 +294,8 @@ var task =
 			key: '_createWorker',
 			value: function _createWorker() {
 				var worker = new _Worker2['default']({
-					onTaskComplete: this._onWorkerTaskComplete
+					onTaskComplete: this._onWorkerTaskComplete,
+					onExit: this._onWorkerExit
 				}, this._WorkerProxy);
 
 				this._workers.push(worker);
@@ -306,14 +321,53 @@ var task =
 
 	var Worker = function () {
 		function Worker($config, WorkerProxy) {
+			var _this = this;
+
 			_classCallCheck(this, Worker);
 
+			this._onWorkerExit = function () {
+				// something went wrong, and the worker died!
+				_this._onExit(_this);
+			};
+
+			this._onWorkerMessage = function (message) {
+				var taskIndex = null;
+
+				_this.tasks.some(function (task, index) {
+					if (message.id === task.id) {
+						taskIndex = index;
+						return true;
+					}
+				});
+
+				if (taskIndex !== null) {
+					var task = _this.tasks[taskIndex];
+					if (message.error) {
+						if (task.callback) {
+							task.callback(new Error('task.js: ' + message.error));
+						} else {
+							task.reject(new Error('task.js: ' + message.error));
+						}
+					} else {
+						if (task.callback) {
+							task.callback(null, message.result);
+						} else {
+							task.resolve(message.result);
+						}
+					}
+					_this._onTaskComplete(_this);
+					_this.tasks.splice(taskIndex, 1);
+				}
+			};
+
 			this.worker = new WorkerProxy();
-			this.worker.addEventListener('message', this._onWorkerMessage.bind(this));
+			this.worker.addEventListener('message', this._onWorkerMessage);
+			this.worker.addEventListener('exit', this._onWorkerExit);
 			this.tasks = [];
 			this.lastTaskTimestamp = null;
 
 			this._onTaskComplete = $config.onTaskComplete;
+			this._onExit = $config.onExit;
 		}
 
 		_createClass(Worker, [{
@@ -332,37 +386,6 @@ var task =
 				return exists ? this._generateTaskID() : id;
 			}
 		}, {
-			key: '_onWorkerMessage',
-			value: function _onWorkerMessage(message) {
-				var taskIndex = null;
-
-				this.tasks.some(function (task, index) {
-					if (message.id === task.id) {
-						taskIndex = index;
-						return true;
-					}
-				});
-
-				if (taskIndex !== null) {
-					var task = this.tasks[taskIndex];
-					if (message.error) {
-						if (task.callback) {
-							task.callback(new Error('task.js: ' + message.error));
-						} else {
-							task.reject(new Error('task.js: ' + message.error));
-						}
-					} else {
-						if (task.callback) {
-							task.callback(null, message.result);
-						} else {
-							task.resolve(message.result);
-						}
-					}
-					this._onTaskComplete(this);
-					this.tasks.splice(taskIndex, 1);
-				}
-			}
-		}, {
 			key: 'run',
 			value: function run($options) {
 				var id = this._generateTaskID();
@@ -373,7 +396,8 @@ var task =
 					id: id,
 					resolve: $options.resolve,
 					reject: $options.reject,
-					callback: $options.callback
+					callback: $options.callback,
+					$options: $options
 				});
 
 				var message = {
@@ -389,16 +413,21 @@ var task =
 				this.worker.postMessage(message, $options.transferables);
 			}
 		}, {
-			key: 'terminate',
-			value: function terminate() {
+			key: '_purgeTasks',
+			value: function _purgeTasks(reason) {
 				this.tasks.forEach(function (task) {
 					if (task.callback) {
-						task.callback('terminated');
+						task.callback(reason);
 					} else {
-						task.reject('terminated');
+						task.reject(reason);
 					}
 				});
 				this.tasks = [];
+			}
+		}, {
+			key: 'terminate',
+			value: function terminate() {
+				this._purgeTasks();
 				this.worker.terminate();
 			}
 		}]);

@@ -33,6 +33,25 @@ var WorkerManager = function () {
 			worker.run(task);
 		};
 
+		this._onWorkerTaskComplete = function () {
+			_this._next();
+		};
+
+		this._onWorkerExit = function (worker) {
+			// purge dead worker from pool
+			_this._workers = _this._workers.filter(function (item) {
+				return item != worker;
+			});
+
+			// add work back to queue
+			worker.tasks.forEach(function (task) {
+				_this._queue.push(task.$options);
+			});
+
+			// run tick
+			_this._next();
+		};
+
 		$config = $config || {};
 
 		this._WorkerProxy = WorkerProxy;
@@ -116,11 +135,6 @@ var WorkerManager = function () {
 			this._workers = [];
 		}
 	}, {
-		key: '_onWorkerTaskComplete',
-		value: function _onWorkerTaskComplete() {
-			this._next();
-		}
-	}, {
 		key: '_flushIdleWorkers',
 		value: function _flushIdleWorkers() {
 			this._workers = this._workers.filter(function (worker) {
@@ -151,7 +165,8 @@ var WorkerManager = function () {
 		key: '_createWorker',
 		value: function _createWorker() {
 			var worker = new _Worker2['default']({
-				onTaskComplete: this._onWorkerTaskComplete
+				onTaskComplete: this._onWorkerTaskComplete,
+				onExit: this._onWorkerExit
 			}, this._WorkerProxy);
 
 			this._workers.push(worker);

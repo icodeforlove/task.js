@@ -1,11 +1,13 @@
 class Worker {
 	constructor ($config, WorkerProxy) {
 		this.worker = new WorkerProxy();
-		this.worker.addEventListener('message', this._onWorkerMessage.bind(this));
+		this.worker.addEventListener('message', this._onWorkerMessage);
+		this.worker.addEventListener('exit', this._onWorkerExit);
 		this.tasks = [];
 		this.lastTaskTimestamp = null;
 
 		this._onTaskComplete = $config.onTaskComplete;
+		this._onExit = $config.onExit;
 	}
 
 	_generateTaskID () {
@@ -22,7 +24,12 @@ class Worker {
 		return exists ? this._generateTaskID() : id;
 	}
 
-	_onWorkerMessage (message) {
+	_onWorkerExit = () => {
+		// something went wrong, and the worker died!
+		this._onExit(this);
+	}
+
+	_onWorkerMessage = (message) => {
 		let taskIndex = null;
 
 		this.tasks.some(function (task, index) {
@@ -61,7 +68,8 @@ class Worker {
 			id: id,
 			resolve: $options.resolve,
 			reject: $options.reject,
-			callback: $options.callback
+			callback: $options.callback,
+			$options: $options
 		});
 
 		let message = {
@@ -77,15 +85,19 @@ class Worker {
 		this.worker.postMessage(message, $options.transferables);
 	}
 
-	terminate () {
+	_purgeTasks(reason) {
 		this.tasks.forEach(task => {
 			if (task.callback) {
-				task.callback('terminated');
+				task.callback(reason);
 			} else {
-				task.reject('terminated');
+				task.reject(reason);
 			}
 		});
 		this.tasks = [];
+	}
+
+	terminate () {
+		this._purgeTasks();
 		this.worker.terminate();
 	}
 }
