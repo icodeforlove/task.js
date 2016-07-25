@@ -1,4 +1,4 @@
-/*! task.js - 0.0.8 - clientside */
+/*! task.js - 0.0.9 - clientside */
 var task =
 /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
@@ -115,7 +115,7 @@ var task =
 	'use strict';
 
 	module.exports = function functionToObjectURL(func) {
-		var blob = void 0,
+		var blob,
 		    stringFunc = func.toString();
 
 		stringFunc = stringFunc.substring(stringFunc.indexOf('{') + 1, stringFunc.lastIndexOf('}'));

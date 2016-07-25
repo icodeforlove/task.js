@@ -5,8 +5,15 @@ This modules is intended to make working with blocking tasks a bit easier, and i
 ## install
 
 ```
+	# node
 	npm install task.js
+
+
+	# browser
 	bower install task
+
+	or just grab the `/dist/client/task.min.js` file directly
+
 ```
 
 ## important

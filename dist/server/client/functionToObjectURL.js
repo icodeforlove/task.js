@@ -1,7 +1,7 @@
 'use strict';
 
 module.exports = function functionToObjectURL(func) {
-	var blob = void 0,
+	var blob,
 	    stringFunc = func.toString();
 
 	stringFunc = stringFunc.substring(stringFunc.indexOf('{') + 1, stringFunc.lastIndexOf('}'));
