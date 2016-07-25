@@ -1,5 +1,5 @@
 module.exports = function functionToObjectURL (func) {
-	let blob,
+	var blob,
 		stringFunc = func.toString();
 
 	stringFunc = stringFunc.substring(stringFunc.indexOf('{') + 1, stringFunc.lastIndexOf('}'))
