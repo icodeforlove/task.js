@@ -1,7 +1,7 @@
 const fs = require('fs');
 const _ = require('lodash');
 const webpack = require('webpack');
-const package = require('./package.json');
+const packageData = require('./package.json');
 
 // common values across configs
 const LIBRARY_NAME = 'task';
@@ -23,7 +23,7 @@ module.exports.CLIENT_DEV_CONFIG = {
         loaders: DEFAULT_LOADERS
     },
     plugins: [
-        new webpack.BannerPlugin(`${package.name} - ${package.version} - clientside`, {})
+        new webpack.BannerPlugin(`${packageData.name} - ${packageData.version} - clientside`, {})
     ]
 };
 
@@ -41,7 +41,7 @@ module.exports.CLIENT_PROD_CONFIG = {
     },
     plugins: [
         new webpack.optimize.UglifyJsPlugin({sourceMap: true}),
-        new webpack.BannerPlugin(`${package.name} - ${package.version} - clientside/minified`, {})
+        new webpack.BannerPlugin(`${packageData.name} - ${packageData.version} - clientside/minified`, {})
     ]
 },
 

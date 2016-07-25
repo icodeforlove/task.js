@@ -1,5 +1,6 @@
 import isModern from './isModern';
 import WorkerManager from '../WorkerManager';
+import generateTaskFactoryMethod from '../generateTaskFactoryMethod';
 
 const defaults = {
 	maxWorkers: navigator.hardwareConcurrency
@@ -11,14 +12,4 @@ var WorkerProxy = isModern() ? require('./WebWorkerProxy') : require('./Compatib
 module.exports = new WorkerManager(defaults, WorkerProxy);
 
 // allow custom settings (task.js factory)
-module.exports.defaults = function ($config, WorkerProxyOverride) {
-	let config = {};
-
-	// clone defaults
-	Object.keys(defaults).forEach(key => config[key] = defaults[key]);
-
-	// apply user settings
-	Object.keys($config).forEach(key => config[key] = $config[key]);
-
-	return new WorkerManager(config, WorkerProxyOverride || WorkerProxy);
-};
+module.exports.defaults = generateTaskFactoryMethod(defaults, WorkerProxy, WorkerManager);
