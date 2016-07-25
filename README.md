@@ -55,7 +55,7 @@ You can override the defaults like this
 // overriding defaults (optional)
 var myCustomTask = task.defaults({
 	maxWorkers: 4, // (default: the system max, or 4 if it cant be resolved)
-	idleTimeout: 10000, // (default: 10000ms, pass null to disable)
+	idleTimeout: 10000, // (default: 10000ms, pass false to disable)
 	idleCheckInterval: 1000 // (default: 1000ms)
 });
 ```
