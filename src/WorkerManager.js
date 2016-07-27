@@ -7,7 +7,7 @@ class WorkerManager {
 		this._WorkerProxy = WorkerProxy;
 
 		this._maxWorkers = $config.maxWorkers || 4;
-		this._idleTimeout = $config.idleTimeout === false ? false : $config.idleTimeout || 10000;
+		this._idleTimeout = $config.idleTimeout === false ? false : $config.idleTimeout;
 		this._idleCheckInterval = $config.idleCheckInterval || 1000;
 
 		this._workers = [];
