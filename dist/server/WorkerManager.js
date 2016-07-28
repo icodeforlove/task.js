@@ -57,10 +57,13 @@ var WorkerManager = function () {
 		this._WorkerProxy = WorkerProxy;
 
 		this._maxWorkers = $config.maxWorkers || 4;
-		this._idleTimeout = $config.idleTimeout === false ? false : $config.idleTimeout || 10000;
+		this._idleTimeout = $config.idleTimeout === false ? false : $config.idleTimeout;
 		this._idleCheckInterval = $config.idleCheckInterval || 1000;
+		this._globals = $config.globals;
+		this._globalsInitializationFunction = $config.initialize;
 
 		this._workers = [];
+		this._workersInitializing = [];
 		this._queue = [];
 		this._onWorkerTaskComplete = this._onWorkerTaskComplete.bind(this);
 		this._flushIdleWorkers = this._flushIdleWorkers.bind(this);
@@ -96,6 +99,18 @@ var WorkerManager = function () {
 				this._queue.push(task);
 				this._next();
 			}
+		}
+	}, {
+		key: '_runOnWorker',
+		value: function _runOnWorker(worker, args, func) {
+			return new Promise(function (resolve, reject) {
+				worker.run({
+					arguments: args,
+					'function': func,
+					resolve: resolve,
+					reject: reject
+				});
+			});
 		}
 	}, {
 		key: 'wrap',
@@ -155,7 +170,7 @@ var WorkerManager = function () {
 
 			if (idleWorkers.length) {
 				return idleWorkers[0];
-			} else if (this._workers.length < this._maxWorkers) {
+			} else if (this._workers.length < this._maxWorkers && this._workersInitializing.length === 0) {
 				return this._createWorker();
 			} else {
 				return null;
@@ -169,9 +184,23 @@ var WorkerManager = function () {
 				onExit: this._onWorkerExit
 			}, this._WorkerProxy);
 
-			this._workers.push(worker);
+			if (this._globalsInitializationFunction || this._globals) {
+				var globalsInitializationFunction = ('\n\t\t\t\tfunction (_globals) {\n\t\t\t\t\tglobals = (' + (this._globalsInitializationFunction || function (globals) {
+					return globals;
+				}).toString() + ')(_globals || {});\n\t\t\t\t}\n\t\t\t').trim();
 
-			return worker;
+				this._workersInitializing.push(worker);
+				this._runOnWorker(worker, [this._globals || {}], globalsInitializationFunction).then(function () {
+					this._workersInitializing = this._workersInitializing.filter(function (item) {
+						return item != worker;
+					});
+					this._workers.push(worker);
+				}.bind(this));
+				return null;
+			} else {
+				this._workers.push(worker);
+				return worker;
+			}
 		}
 	}]);
 

@@ -57,6 +57,8 @@ var myCustomTask = task.defaults({
 	maxWorkers: 4, // (default: the system max, or 4 if it cant be resolved)
 	idleTimeout: 10000, // (default: false)
 	idleCheckInterval: 1000 // (default: null)
+	globals: {}, // refer to globals information
+	initialize: function (globals) {return globals;} // refer to globals information
 });
 ```
 
@@ -82,7 +84,7 @@ But keep in mind that your function cannot reference anything inside of your cur
 
 ## task.run
 
-below is an example of using a transferable
+Below is an example of using a transferable
 
 ```javascript
 var buffer = new ArrayBuffer();
@@ -100,11 +102,69 @@ task.run({
 
 ## task.terminate
 
-when you run terminate it will destroy all current workers in the pool, and throw an error on all outstanding work
+When you run terminate it will destroy all current workers in the pool, and throw an error on all outstanding work.
 
 ```javascript
 task.terminate();
 ```
+
+## globals in workers
+
+You can initialize a task instance to have predefined data from your main thread, or generated within the worker.
+
+```javascript
+var data = {one: 1};
+
+task.defaults({
+	globals: {
+		data: data,
+		two: 2,
+		three: 3
+	}
+})
+
+task.wrap(function () {
+	console.log(globals.data);
+	console.log(globals.two);
+	console.log(globals.three);
+});
+```
+
+The above works great for small data, but with larger data this doesnt work. This is where you can use the initialize property in defaults.
+
+```javascript
+task.defaults({
+	globals: {
+		data: {one: 1}
+	},
+	initialize: function (globals) {
+		globals.bigData = [];
+		for (var i = 0; i < 100000; i++) {
+			globals.bigData.push(0);
+		}
+		return globals;
+	}
+});
+```
+
+You can also use initialize to define common methods in the worker scope as well.
+
+```javascript
+task.defaults({
+	globals: {
+		data: {one: 1}
+	},
+	initialize: function (globals) {
+		globals.myFunc = function () {
+			...
+		}
+
+		return globals;
+	}
+});
+```
+
+Keep in mind that it is ok to have a slow initialize, no work will actually be processed until there is a fully initialized worker.
 
 ## browser tests
 

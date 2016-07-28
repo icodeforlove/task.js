@@ -9,8 +9,11 @@ class WorkerManager {
 		this._maxWorkers = $config.maxWorkers || 4;
 		this._idleTimeout = $config.idleTimeout === false ? false : $config.idleTimeout;
 		this._idleCheckInterval = $config.idleCheckInterval || 1000;
+		this._globals = $config.globals;
+		this._globalsInitializationFunction = $config.initialize;
 
 		this._workers = [];
+		this._workersInitializing = [];
 		this._queue = [];
 		this._onWorkerTaskComplete = this._onWorkerTaskComplete.bind(this);
 		this._flushIdleWorkers = this._flushIdleWorkers.bind(this);
@@ -44,6 +47,17 @@ class WorkerManager {
 			this._queue.push(task);
 			this._next();
 		}
+	}
+
+	_runOnWorker(worker, args, func) {
+		return new Promise (function (resolve, reject) {
+			worker.run({
+				arguments: args,
+				function: func,
+				resolve: resolve,
+				reject: reject
+			});
+		});
 	}
 
 	wrap (func) {
@@ -129,7 +143,7 @@ class WorkerManager {
 
 		if (idleWorkers.length) {
 			return idleWorkers[0];
-		} else if (this._workers.length < this._maxWorkers) {
+		} else if (this._workers.length < this._maxWorkers && this._workersInitializing.length === 0) {
 			return this._createWorker();
 		} else {
 			return null;
@@ -142,9 +156,23 @@ class WorkerManager {
 			onExit: this._onWorkerExit
 		}, this._WorkerProxy);
 
-		this._workers.push(worker);
+		if (this._globalsInitializationFunction || this._globals) {
+			var globalsInitializationFunction = `
+				function (_globals) {
+					globals = (${(this._globalsInitializationFunction || function (globals) {return globals}).toString()})(_globals || {});
+				}
+			`.trim();
 
-		return worker;
+			this._workersInitializing.push(worker);
+			this._runOnWorker(worker, [this._globals || {}], globalsInitializationFunction).then(function () {
+				this._workersInitializing = this._workersInitializing.filter(item => item != worker);
+				this._workers.push(worker);
+			}.bind(this));
+			return null;
+		} else {
+			this._workers.push(worker);
+			return worker;
+		}
 	}
 }
 
