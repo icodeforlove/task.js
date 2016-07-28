@@ -29,7 +29,7 @@ var WorkerManager = function () {
 			}
 
 			var task = _this._queue.shift();
-
+			_this._log('sending tid(' + task.id + ') to wid(' + worker.id + ')');
 			worker.run(task);
 		};
 
@@ -38,6 +38,8 @@ var WorkerManager = function () {
 		};
 
 		this._onWorkerExit = function (worker) {
+			_this._log('worker died, reissuing task');
+
 			// purge dead worker from pool
 			_this._workers = _this._workers.filter(function (item) {
 				return item != worker;
@@ -54,6 +56,8 @@ var WorkerManager = function () {
 
 		$config = $config || {};
 
+		this.id = ++WorkerManager.managerCount;
+
 		this._WorkerProxy = WorkerProxy;
 
 		this._maxWorkers = $config.maxWorkers || 4;
@@ -62,14 +66,19 @@ var WorkerManager = function () {
 		this._warmStart = $config.warmStart || false;
 		this._globals = $config.globals;
 		this._globalsInitializationFunction = $config.initialize;
+		this._debug = $config.debug;
+		this._log('creating new pool : ' + JSON.stringify($config));
 
 		this._workers = [];
 		this._workersInitializing = [];
 		this._queue = [];
 		this._onWorkerTaskComplete = this._onWorkerTaskComplete.bind(this);
 		this._flushIdleWorkers = this._flushIdleWorkers.bind(this);
+		this._totalWorkersCreated = 0;
 
 		if (this._warmStart) {
+			this._log('warm starting workers');
+
 			for (var i = 0; i < this._maxWorkers; i++) {
 				this._createWorker();
 			}
@@ -77,6 +86,13 @@ var WorkerManager = function () {
 	}
 
 	_createClass(WorkerManager, [{
+		key: '_log',
+		value: function _log(message) {
+			if (this._debug) {
+				console.log('task.js:manager[mid(' + this.id + ')] ' + message);
+			}
+		}
+	}, {
 		key: 'getActiveWorkerCount',
 		value: function getActiveWorkerCount() {
 			return this._workersInitializing.length + this._workers.length;
@@ -100,6 +116,10 @@ var WorkerManager = function () {
 				task.arguments = Array.prototype.slice.call(task.arguments);
 			}
 
+			task.id = ++WorkerManager.taskCount;
+
+			this._log('added tid(' + task.id + ') to the queue');
+
 			if (!task.callback) {
 				return new Promise(function (resolve, reject) {
 					task.resolve = resolve;
@@ -117,6 +137,7 @@ var WorkerManager = function () {
 		value: function _runOnWorker(worker, args, func) {
 			return new Promise(function (resolve, reject) {
 				worker.run({
+					id: ++WorkerManager.taskCount,
 					arguments: args,
 					'function': func,
 					resolve: resolve,
@@ -147,6 +168,8 @@ var WorkerManager = function () {
 	}, {
 		key: 'terminate',
 		value: function terminate() {
+			this._log('terminated');
+
 			// kill idle timeout (if it exists)
 			if (this._idleTimeout && typeof this._idleCheckIntervalID == 'number') {
 				clearInterval(this._idleCheckIntervalID);
@@ -164,6 +187,7 @@ var WorkerManager = function () {
 	}, {
 		key: '_flushIdleWorkers',
 		value: function _flushIdleWorkers() {
+			this._log('flushing idle workers');
 			this._workers = this._workers.filter(function (worker) {
 				if (worker.tasks.length === 0 && new Date() - worker.lastTaskTimestamp > this._idleTimeout) {
 					worker.terminate();
@@ -191,12 +215,18 @@ var WorkerManager = function () {
 	}, {
 		key: '_createWorker',
 		value: function _createWorker() {
+			var workerId = ++this._totalWorkersCreated;
+
 			var worker = new _Worker2['default']({
+				debug: this._debug,
+				id: workerId,
+				managerId: this.id,
 				onTaskComplete: this._onWorkerTaskComplete,
 				onExit: this._onWorkerExit
 			}, this._WorkerProxy);
 
 			if (this._globalsInitializationFunction || this._globals) {
+				this._log('running global initialization code');
 				var globalsInitializationFunction = ('\n\t\t\t\tfunction (_globals) {\n\t\t\t\t\tglobals = (' + (this._globalsInitializationFunction || function (globals) {
 					return globals;
 				}).toString() + ')(_globals || {});\n\t\t\t\t}\n\t\t\t').trim();
@@ -218,5 +248,9 @@ var WorkerManager = function () {
 
 	return WorkerManager;
 }();
+
+WorkerManager.managerCount = 0;
+WorkerManager.taskCount = 0;
+
 
 module.exports = WorkerManager;

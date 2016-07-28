@@ -1,7 +1,9 @@
 const cp = require('child_process');
 
 class NodeWorkerProxy {
-	constructor () {
+	constructor ($config) {
+		$config = $config || {};
+
 		this._listeners = {};
 		this._worker = cp.fork(`${__dirname}/NodeWorker.js`);
 		this._worker.on('message', this._onMessage);
@@ -10,12 +12,25 @@ class NodeWorkerProxy {
 		this._worker.on('disconnect', this._onExit);
 		this._worker.on('error', this._onExit);
 		this._alive = true;
+		this._debug = $config.debug;
+		this.id = $config.id;
+		this.managerId = $config.managerId;
+
+		this._log(`initialized`);
+	}
+
+	_log (message) {
+		if (this._debug) {
+			console.log(`task.js:worker-proxy[mid(${this.managerId}) wid(${this.id}) pid(${this._worker.pid})]: ${message}`);
+		}
 	}
 
 	_onExit = () => {
 		if (!this._alive) {
 			return;
 		}
+
+		this._log(`killed`);
 
 		this._alive = false;
 
@@ -28,6 +43,7 @@ class NodeWorkerProxy {
 	_onMessage = (message) => {
 		let callbacks = this._listeners.message;
 		if (callbacks) {
+			this._log(`recieved tid(${message.id}) completion event`);
 			callbacks.forEach(callback => callback(message));
 		}
 	}
@@ -38,10 +54,12 @@ class NodeWorkerProxy {
 	}
 
 	postMessage(message) {
+		this._log(`sending tid(${message.id}) to worker process`);
 		this._worker.send(message);
 	}
 
 	terminate () {
+		this._log(`terminated`);
 		this._listeners = {};
 		this._worker.kill();
 	}

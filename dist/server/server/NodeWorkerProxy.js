@@ -7,7 +7,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 var cp = require('child_process');
 
 var NodeWorkerProxy = function () {
-	function NodeWorkerProxy() {
+	function NodeWorkerProxy($config) {
 		var _this = this;
 
 		_classCallCheck(this, NodeWorkerProxy);
@@ -16,6 +16,8 @@ var NodeWorkerProxy = function () {
 			if (!_this._alive) {
 				return;
 			}
+
+			_this._log('killed');
 
 			_this._alive = false;
 
@@ -30,11 +32,14 @@ var NodeWorkerProxy = function () {
 		this._onMessage = function (message) {
 			var callbacks = _this._listeners.message;
 			if (callbacks) {
+				_this._log('recieved tid(' + message.id + ') completion event');
 				callbacks.forEach(function (callback) {
 					return callback(message);
 				});
 			}
 		};
+
+		$config = $config || {};
 
 		this._listeners = {};
 		this._worker = cp.fork(__dirname + '/NodeWorker.js');
@@ -44,9 +49,21 @@ var NodeWorkerProxy = function () {
 		this._worker.on('disconnect', this._onExit);
 		this._worker.on('error', this._onExit);
 		this._alive = true;
+		this._debug = $config.debug;
+		this.id = $config.id;
+		this.managerId = $config.managerId;
+
+		this._log('initialized');
 	}
 
 	_createClass(NodeWorkerProxy, [{
+		key: '_log',
+		value: function _log(message) {
+			if (this._debug) {
+				console.log('task.js:worker-proxy[mid(' + this.managerId + ') wid(' + this.id + ') pid(' + this._worker.pid + ')]: ' + message);
+			}
+		}
+	}, {
 		key: 'addEventListener',
 		value: function addEventListener(event, callback) {
 			this._listeners[event] = this._listeners[event] || [];
@@ -55,11 +72,13 @@ var NodeWorkerProxy = function () {
 	}, {
 		key: 'postMessage',
 		value: function postMessage(message) {
+			this._log('sending tid(' + message.id + ') to worker process');
 			this._worker.send(message);
 		}
 	}, {
 		key: 'terminate',
 		value: function terminate() {
+			this._log('terminated');
 			this._listeners = {};
 			this._worker.kill();
 		}

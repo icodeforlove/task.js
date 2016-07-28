@@ -1,10 +1,23 @@
 import functionToObjectURL from './functionToObjectURL';
 
 class WebWorkerProxy {
-	constructor () {
+	constructor ($config) {
+		$config = $config || {};
+
 		this._listeners = {};
+		this._debug = $config.debug;
+		this.id = $config.id;
+		this.managerId = $config.managerId;
 		this._worker = new Worker(functionToObjectURL(this.WORKER_SOURCE));
 		this._worker.addEventListener('message', this._onMessage);
+
+		this._log(`initialized`);
+	}
+
+	_log (message) {
+		if (this._debug) {
+			console.log(`task.js:worker-proxy[mid(${this.managerId}) wid(${this.id})]: ${message}`);
+		}
 	}
 
 	WORKER_SOURCE = `function () {
@@ -32,6 +45,7 @@ class WebWorkerProxy {
 
 		let callbacks = this._listeners.message;
 		if (callbacks) {
+			this._log(`recieved task completion event`);
 			callbacks.forEach(callback => callback(message));
 		}
 	}
@@ -42,10 +56,12 @@ class WebWorkerProxy {
 	}
 
 	postMessage(message, options) {
+		this._log(`sending tid(${message.id}) to worker process`);
 		this._worker.postMessage(message, options);
 	}
 
 	terminate () {
+		this._log(`terminated`);
 		this._worker.terminate();
 	}
 }
