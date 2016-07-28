@@ -4,15 +4,14 @@ This modules is intended to make working with blocking tasks a bit easier, and i
 ## install
 
 ```
-	# node
-	npm install task.js
+# node
+npm install task.js
 
 
-	# browser
-	bower install task
+# browser
+bower install task
 
-	or just grab the `/dist/client/task.min.js` file directly
-
+or just grab the `/dist/client/task.min.js` file directly
 ```
 
 ## important
@@ -168,11 +167,6 @@ task.defaults({
 
 Keep in mind that it is ok to have a slow initialize, no work will actually be processed until there is a fully initialized worker.
 
-## browser tests
+## compatibility
 
 [![Selenium Test Status](https://saucelabs.com/browser-matrix/task-js.svg)](https://saucelabs.com/u/task-js)
-
-## todo / help
-
-- for node add shm buffer support or something, we need a nice way to deal with spreading the cores across large chunks of data
-- add opensauce tests?
