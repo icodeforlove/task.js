@@ -54,6 +54,7 @@ You can override the defaults like this
 ```javascript
 // overriding defaults (optional)
 var myCustomTask = task.defaults({
+	warmStart: false, // (default: false, if set to true all workers will be initialized instantly)
 	maxWorkers: 4, // (default: the system max, or 4 if it cant be resolved)
 	idleTimeout: 10000, // (default: false)
 	idleCheckInterval: 1000 // (default: null)

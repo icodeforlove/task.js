@@ -177,10 +177,37 @@ module.exports = function (task, Promise, CompatibilityWorkerProxy) {
 				return globals.data;
 			})().then(function (data) {
 				expect(data).toEqual(1);
+				customTask.terminate();
 				done();
 			});
 		});
 
+		it('can warmStart', function (done) {
+			let customTask = task.defaults({
+				warmStart: true,
+				maxWorkers: 2
+			});
+
+			expect(customTask.getActiveWorkerCount()).toEqual(2);
+
+			customTask.terminate();
+			done();
+		});
+
+		it('can warmStart with globals', function (done) {
+			let customTask = task.defaults({
+				globals: {
+					data: 1
+				},
+				warmStart: true,
+				maxWorkers: 2
+			});
+
+			expect(customTask.getActiveWorkerCount()).toEqual(2);
+
+			customTask.terminate();
+			done();
+		});
 
 		it('can use globals and initialize', function (done) {
 			let customTask = task.defaults({
@@ -197,6 +224,7 @@ module.exports = function (task, Promise, CompatibilityWorkerProxy) {
 				return globals.data;
 			})().then(function (data) {
 				expect(data).toEqual(2);
+				customTask.terminate();
 				done();
 			});
 		});

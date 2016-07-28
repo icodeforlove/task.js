@@ -59,6 +59,7 @@ var WorkerManager = function () {
 		this._maxWorkers = $config.maxWorkers || 4;
 		this._idleTimeout = $config.idleTimeout === false ? false : $config.idleTimeout;
 		this._idleCheckInterval = $config.idleCheckInterval || 1000;
+		this._warmStart = $config.warmStart || false;
 		this._globals = $config.globals;
 		this._globalsInitializationFunction = $config.initialize;
 
@@ -67,9 +68,20 @@ var WorkerManager = function () {
 		this._queue = [];
 		this._onWorkerTaskComplete = this._onWorkerTaskComplete.bind(this);
 		this._flushIdleWorkers = this._flushIdleWorkers.bind(this);
+
+		if (this._warmStart) {
+			for (var i = 0; i < this._maxWorkers; i++) {
+				this._createWorker();
+			}
+		}
 	}
 
 	_createClass(WorkerManager, [{
+		key: 'getActiveWorkerCount',
+		value: function getActiveWorkerCount() {
+			return this._workersInitializing.length + this._workers.length;
+		}
+	}, {
 		key: 'run',
 		value: function run(task) {
 			if (this._idleTimeout && typeof this._idleCheckIntervalID !== 'number') {
