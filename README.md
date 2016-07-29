@@ -15,7 +15,7 @@ or
 bower install task
 ```
 
-or just grab the [cdnjs hosted version](https://cdnjs.cloudflare.com/ajax/libs/task.js/0.0.16/task.min.js) directly
+or just grab the [cdnjs hosted version](https://cdnjs.cloudflare.com/ajax/libs/task.js/0.0.17/task.min.js) directly
 
 ## important
 
