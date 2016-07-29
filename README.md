@@ -4,27 +4,26 @@ This modules is intended to make working with blocking tasks a bit easier, and i
 ## install
 
 ```
-	# node
-	npm install task.js
+# node
+npm install task.js
 
 
-	# browser
-	bower install task
+# browser
+bower install task
 
-	or just grab the `/dist/client/task.min.js` file directly
-
+or just grab the `/dist/client/task.min.js` file directly
 ```
 
 ## important
 
-Before using this module i want to expose the current performance issues
+Before using this module I want to expose the current performance issues
 
 - Node.js
 
-	- When using task.js in node with very large messages it can be very slow, this is due to the fact that node is copying all the messag data.
+	- When using task.js in node with very large messages it can be very slow, this is due to the fact that node is copying all the message data.
 
 - Clientside
-	- When using task.js in a browser that doesnt support transferables (or you dont use them properly) then you will notice a slow down when passing massive array buffers
+	- When using task.js in a browser that doesn't support transferables (or you don't use them properly) then you will notice a slow down when passing massive array buffers
 
 Rule of thumb in node keep your object size under 150kb, and in the clientside version you can go crazy and send 40MB array buffers if transferables are supported.
 
@@ -56,7 +55,7 @@ You can override the defaults like this
 var myCustomTask = task.defaults({
 	debug: false, // extremely verbose, you should also set maxWorkers to 1
 	warmStart: false, // (default: false, if set to true all workers will be initialized instantly)
-	maxWorkers: 4, // (default: the system max, or 4 if it cant be resolved)
+	maxWorkers: 4, // (default: the system max, or 4 if it can't be resolved)
 	idleTimeout: 10000, // (default: false)
 	idleCheckInterval: 1000 // (default: null)
 	globals: {}, // refer to globals information
@@ -68,7 +67,7 @@ behind the scenes it's spreading your dynamic work across your cores
 
 ## task.wrap
 
-You can wrap a function if the method signatures match, and it doesnt rely on any external variables.
+You can wrap a function if the method signatures match, and it doesn't rely on any external variables.
 
 ```javascript
 // non async
@@ -82,7 +81,7 @@ powAsync(2).then(function (squaredNumber) {
 });
 ```
 
-But keep in mind that your function cannot reference anything inside of your current scope because its running inside of a worker.
+But keep in mind that your function cannot reference anything inside of your current scope because it is running inside of a worker.
 
 ## task.run
 
@@ -132,7 +131,7 @@ task.wrap(function () {
 });
 ```
 
-The above works great for small data, but with larger data this doesnt work. This is where you can use the initialize property in defaults.
+The above works great for small data, but with larger data this doesn't work. This is where you can use the initialize property in defaults.
 
 ```javascript
 task.defaults({
@@ -168,11 +167,6 @@ task.defaults({
 
 Keep in mind that it is ok to have a slow initialize, no work will actually be processed until there is a fully initialized worker.
 
-## browser tests
+## compatibility
 
 [![Selenium Test Status](https://saucelabs.com/browser-matrix/task-js.svg)](https://saucelabs.com/u/task-js)
-
-## todo / help
-
-- for node add shm buffer support or something, we need a nice way to deal with spreading the cores across large chunks of data
-- add opensauce tests?
