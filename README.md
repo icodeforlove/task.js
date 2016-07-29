@@ -54,6 +54,7 @@ You can override the defaults like this
 // overriding defaults (optional)
 var myCustomTask = task.defaults({
 	debug: false, // extremely verbose, you should also set maxWorkers to 1
+	logger: console.log, // (default: console.log, this is useful if you want to parse all log messages)
 	warmStart: false, // (default: false, if set to true all workers will be initialized instantly)
 	maxWorkers: 4, // (default: the system max, or 4 if it can't be resolved)
 	idleTimeout: 10000, // (default: false)

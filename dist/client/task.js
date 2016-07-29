@@ -1,4 +1,4 @@
-/*! task.js - 0.0.16 - clientside */
+/*! task.js - 0.0.17 - clientside */
 var task =
 /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
@@ -180,6 +180,7 @@ var task =
 			this.id = ++WorkerManager.managerCount;
 
 			this._WorkerProxy = WorkerProxy;
+			this._logger = $config.logger || console.log;
 
 			this._maxWorkers = $config.maxWorkers || 4;
 			this._idleTimeout = $config.idleTimeout === false ? false : $config.idleTimeout;
@@ -208,7 +209,7 @@ var task =
 
 		WorkerManager.prototype._log = function _log(message) {
 			if (this._debug) {
-				console.log('task.js:manager[mid(' + this.id + ')] ' + message);
+				this._logger('task.js:manager[mid(' + this.id + ')] ' + message);
 			}
 		};
 
@@ -330,6 +331,7 @@ var task =
 
 			var worker = new this._WorkerProxy({
 				debug: this._debug,
+				logger: this._logger,
 				id: workerId,
 				managerId: this.id,
 				onTaskComplete: this._onWorkerTaskComplete,
@@ -447,7 +449,7 @@ var task =
 
 		WebWorker.prototype._log = function _log(message) {
 			if (this._debug) {
-				console.log('task.js:worker[mid(' + this.managerId + ') wid(' + this.id + ')]: ' + message);
+				this._logger('task.js:worker[mid(' + this.managerId + ') wid(' + this.id + ')]: ' + message);
 			}
 		};
 
@@ -510,6 +512,7 @@ var task =
 			this.id = $config.id;
 			this.managerId = $config.managerId;
 			this._debug = $config.debug;
+			this._logger = $config.logger;
 
 			this.tasks = [];
 			this.lastTaskTimestamp = null;
@@ -627,7 +630,7 @@ var task =
 
 		CompatibilityWorker.prototype._log = function _log(message) {
 			if (this._debug) {
-				console.log('task.js:worker[mid(' + this.managerId + ') wid(' + this.id + ')]: ' + message);
+				this._logger('task.js:worker[mid(' + this.managerId + ') wid(' + this.id + ')]: ' + message);
 			}
 		};
 

@@ -3,6 +3,7 @@ class GeneralWorker {
 		this.id = $config.id;
 		this.managerId = $config.managerId;
 		this._debug = $config.debug;
+		this._logger = $config.logger;
 
 		this.tasks = [];
 		this.lastTaskTimestamp = null;
