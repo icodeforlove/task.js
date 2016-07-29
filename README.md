@@ -32,15 +32,15 @@ Rule of thumb in node keep your object size under 150kb, and in the clientside v
 task.js supports both styles
 
 ```javascript
-var powAsync = task.wrap(pow);
+var powTask = task.wrap(pow);
 
 // callbacks
-pow(2, function (error, result) {
+powTask(2, function (error, result) {
 
 });
 
 // promises
-pow(2).then(
+powTask(2).then(
 	function (result) {},
 	function (error) {}
 );
@@ -75,8 +75,8 @@ function pow(number) {
 	return Math.pow(number, 2);
 }
 
-var powAsync = task.wrap(pow);
-powAsync(2).then(function (squaredNumber) {
+var powTask = task.wrap(pow);
+powTask(2).then(function (squaredNumber) {
 	console.log(squaredNumber);
 });
 ```
