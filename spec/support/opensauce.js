@@ -64,7 +64,7 @@ module.exports = function(config) {
 		// Windows XP Browsers
 		// {platform: 'Windows XP', browserName: 'chrome', version: 'latest'},
 		// {platform: 'Windows XP', browserName: 'firefox', version: 'latest'},
-		{platform: 'Windows XP', browserName: 'internet explorer', version: 'latest'},
+		// {platform: 'Windows XP', browserName: 'internet explorer', version: 'latest'},
 
 		// Windows 7 Browsers
 		{platform: 'Windows 7', browserName: 'chrome', version: 'latest'},

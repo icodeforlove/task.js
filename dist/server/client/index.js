@@ -1,5 +1,7 @@
 'use strict';
 
+require('babel-polyfill');
+
 var _isModern = require('./isModern');
 
 var _isModern2 = _interopRequireDefault(_isModern);

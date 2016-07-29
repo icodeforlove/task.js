@@ -2,8 +2,6 @@
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
 
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var WorkerManager = function () {
@@ -79,166 +77,155 @@ var WorkerManager = function () {
 		}
 	}
 
-	_createClass(WorkerManager, [{
-		key: '_log',
-		value: function _log(message) {
-			if (this._debug) {
-				console.log('task.js:manager[mid(' + this.id + ')] ' + message);
-			}
+	WorkerManager.prototype._log = function _log(message) {
+		if (this._debug) {
+			console.log('task.js:manager[mid(' + this.id + ')] ' + message);
 		}
-	}, {
-		key: 'getActiveWorkerCount',
-		value: function getActiveWorkerCount() {
-			return this._workersInitializing.length + this._workers.length;
+	};
+
+	WorkerManager.prototype.getActiveWorkerCount = function getActiveWorkerCount() {
+		return this._workersInitializing.length + this._workers.length;
+	};
+
+	WorkerManager.prototype.run = function run(task) {
+		if (this._idleTimeout && typeof this._idleCheckIntervalID !== 'number') {
+			this._idleCheckIntervalID = setInterval(this._flushIdleWorkers, this._idleCheckInterval);
 		}
-	}, {
-		key: 'run',
-		value: function run(task) {
-			if (this._idleTimeout && typeof this._idleCheckIntervalID !== 'number') {
-				this._idleCheckIntervalID = setInterval(this._flushIdleWorkers, this._idleCheckInterval);
-			}
 
-			if (!task.arguments || typeof task.arguments.length === 'undefined') {
-				throw new Error('task.js: "arguments" is required property, and it must be an array/array-like');
-			}
+		if (!task.arguments || typeof task.arguments.length === 'undefined') {
+			throw new Error('task.js: "arguments" is required property, and it must be an array/array-like');
+		}
 
-			if (!task['function'] && (typeof task['function'] !== 'function' || typeof task['function'] !== 'string')) {
-				throw new Error('task.js: "function" is required property, and it must be a string or a function');
-			}
+		if (!task['function'] && (typeof task['function'] !== 'function' || typeof task['function'] !== 'string')) {
+			throw new Error('task.js: "function" is required property, and it must be a string or a function');
+		}
 
-			if (_typeof(task.arguments) === 'object') {
-				task.arguments = Array.prototype.slice.call(task.arguments);
-			}
+		if (_typeof(task.arguments) === 'object') {
+			task.arguments = Array.prototype.slice.call(task.arguments);
+		}
 
-			task.id = ++WorkerManager.taskCount;
+		task.id = ++WorkerManager.taskCount;
 
-			this._log('added tid(' + task.id + ') to the queue');
+		this._log('added tid(' + task.id + ') to the queue');
 
-			if (!task.callback) {
-				return new Promise(function (resolve, reject) {
-					task.resolve = resolve;
-					task.reject = reject;
-					this._queue.push(task);
-					this._next();
-				}.bind(this));
-			} else {
+		if (!task.callback) {
+			return new Promise(function (resolve, reject) {
+				task.resolve = resolve;
+				task.reject = reject;
 				this._queue.push(task);
 				this._next();
-			}
+			}.bind(this));
+		} else {
+			this._queue.push(task);
+			this._next();
 		}
-	}, {
-		key: '_runOnWorker',
-		value: function _runOnWorker(worker, args, func) {
-			return new Promise(function (resolve, reject) {
-				worker.run({
-					id: ++WorkerManager.taskCount,
-					arguments: args,
-					'function': func,
-					resolve: resolve,
-					reject: reject
-				});
+	};
+
+	WorkerManager.prototype._runOnWorker = function _runOnWorker(worker, args, func) {
+		return new Promise(function (resolve, reject) {
+			worker.run({
+				id: ++WorkerManager.taskCount,
+				arguments: args,
+				'function': func,
+				resolve: resolve,
+				reject: reject
 			});
-		}
-	}, {
-		key: 'wrap',
-		value: function wrap(func) {
-			return function () {
-				var args = Array.from(arguments),
-				    callback = null;
+		});
+	};
 
-				if (typeof args[args.length - 1] === 'function') {
-					// apparently splice is broken in ie8
-					callback = args.slice(-1).pop();
-					args = args.slice(0, -1);
-				}
+	WorkerManager.prototype.wrap = function wrap(func) {
+		return function () {
+			var args = Array.from(arguments),
+			    callback = null;
 
-				return this.run({
-					arguments: args,
-					'function': func,
-					callback: callback
-				});
-			}.bind(this);
-		}
-	}, {
-		key: 'terminate',
-		value: function terminate() {
-			this._log('terminated');
-
-			// kill idle timeout (if it exists)
-			if (this._idleTimeout && typeof this._idleCheckIntervalID == 'number') {
-				clearInterval(this._idleCheckIntervalID);
-				this._idleCheckIntervalID = null;
+			if (typeof args[args.length - 1] === 'function') {
+				// apparently splice is broken in ie8
+				callback = args.slice(-1).pop();
+				args = args.slice(0, -1);
 			}
 
-			// terminate all existing workers
-			this._workers.forEach(function (worker) {
+			return this.run({
+				arguments: args,
+				'function': func,
+				callback: callback
+			});
+		}.bind(this);
+	};
+
+	WorkerManager.prototype.terminate = function terminate() {
+		this._log('terminated');
+
+		// kill idle timeout (if it exists)
+		if (this._idleTimeout && typeof this._idleCheckIntervalID == 'number') {
+			clearInterval(this._idleCheckIntervalID);
+			this._idleCheckIntervalID = null;
+		}
+
+		// terminate all existing workers
+		this._workers.forEach(function (worker) {
+			worker.terminate();
+		});
+
+		// flush worker pool
+		this._workers = [];
+	};
+
+	WorkerManager.prototype._flushIdleWorkers = function _flushIdleWorkers() {
+		this._log('flushing idle workers');
+		this._workers = this._workers.filter(function (worker) {
+			if (worker.tasks.length === 0 && new Date() - worker.lastTaskTimestamp > this._idleTimeout) {
 				worker.terminate();
-			});
-
-			// flush worker pool
-			this._workers = [];
-		}
-	}, {
-		key: '_flushIdleWorkers',
-		value: function _flushIdleWorkers() {
-			this._log('flushing idle workers');
-			this._workers = this._workers.filter(function (worker) {
-				if (worker.tasks.length === 0 && new Date() - worker.lastTaskTimestamp > this._idleTimeout) {
-					worker.terminate();
-					return false;
-				} else {
-					return true;
-				}
-			}, this);
-		}
-	}, {
-		key: '_getWorker',
-		value: function _getWorker() {
-			var idleWorkers = this._workers.filter(function (worker) {
-				return worker.tasks.length === 0;
-			});
-
-			if (idleWorkers.length) {
-				return idleWorkers[0];
-			} else if (this._workers.length < this._maxWorkers && this._workersInitializing.length === 0) {
-				return this._createWorker();
+				return false;
 			} else {
-				return null;
+				return true;
 			}
+		}, this);
+	};
+
+	WorkerManager.prototype._getWorker = function _getWorker() {
+		var idleWorkers = this._workers.filter(function (worker) {
+			return worker.tasks.length === 0;
+		});
+
+		if (idleWorkers.length) {
+			return idleWorkers[0];
+		} else if (this._workers.length < this._maxWorkers && this._workersInitializing.length === 0) {
+			return this._createWorker();
+		} else {
+			return null;
 		}
-	}, {
-		key: '_createWorker',
-		value: function _createWorker() {
-			var workerId = ++this._totalWorkersCreated;
+	};
 
-			var worker = new this._WorkerProxy({
-				debug: this._debug,
-				id: workerId,
-				managerId: this.id,
-				onTaskComplete: this._onWorkerTaskComplete,
-				onExit: this._onWorkerExit
-			});
+	WorkerManager.prototype._createWorker = function _createWorker() {
+		var workerId = ++this._totalWorkersCreated;
 
-			if (this._globalsInitializationFunction || this._globals) {
-				this._log('running global initialization code');
-				var globalsInitializationFunction = ('\n\t\t\t\tfunction (_globals) {\n\t\t\t\t\tglobals = (' + (this._globalsInitializationFunction || function (globals) {
-					return globals;
-				}).toString() + ')(_globals || {});\n\t\t\t\t}\n\t\t\t').trim();
+		var worker = new this._WorkerProxy({
+			debug: this._debug,
+			id: workerId,
+			managerId: this.id,
+			onTaskComplete: this._onWorkerTaskComplete,
+			onExit: this._onWorkerExit
+		});
 
-				this._workersInitializing.push(worker);
-				this._runOnWorker(worker, [this._globals || {}], globalsInitializationFunction).then(function () {
-					this._workersInitializing = this._workersInitializing.filter(function (item) {
-						return item != worker;
-					});
-					this._workers.push(worker);
-				}.bind(this));
-				return null;
-			} else {
+		if (this._globalsInitializationFunction || this._globals) {
+			this._log('running global initialization code');
+			var globalsInitializationFunction = ('\n\t\t\t\tfunction (_globals) {\n\t\t\t\t\tglobals = (' + (this._globalsInitializationFunction || function (globals) {
+				return globals;
+			}).toString() + ')(_globals || {});\n\t\t\t\t}\n\t\t\t').trim();
+
+			this._workersInitializing.push(worker);
+			this._runOnWorker(worker, [this._globals || {}], globalsInitializationFunction).then(function () {
+				this._workersInitializing = this._workersInitializing.filter(function (item) {
+					return item != worker;
+				});
 				this._workers.push(worker);
-				return worker;
-			}
+			}.bind(this));
+			return null;
+		} else {
+			this._workers.push(worker);
+			return worker;
 		}
-	}]);
+	};
 
 	return WorkerManager;
 }();
