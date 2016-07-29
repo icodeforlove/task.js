@@ -6,13 +6,16 @@ This modules is intended to make working with blocking tasks a bit easier, and i
 ```
 # node
 npm install task.js
+```
 
+or
 
+```
 # browser
 bower install task
-
-or just grab the `/dist/client/task.min.js` file directly
 ```
+
+or just grab the [cdnjs hosted version](https://cdnjs.cloudflare.com/ajax/libs/task.js/0.0.16/task.min.js) directly
 
 ## important
 
