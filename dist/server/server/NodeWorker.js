@@ -8,7 +8,7 @@ var _GeneralWorker2 = require('../GeneralWorker');
 
 var _GeneralWorker3 = _interopRequireDefault(_GeneralWorker2);
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
 function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
 
@@ -61,7 +61,7 @@ var NodeWorker = function (_GeneralWorker) {
 		$config = $config || {};
 
 		//this._listeners = {};
-		_this._worker = _child_process2.default.fork(__dirname + '/EvalWorker.js');
+		_this._worker = _child_process2['default'].fork(__dirname + '/EvalWorker.js');
 		_this._worker.on('message', _this._onMessage);
 		_this._worker.on('exit', _this._onExit);
 		_this._worker.on('close', _this._onExit);
@@ -77,6 +77,6 @@ var NodeWorker = function (_GeneralWorker) {
 	}
 
 	return NodeWorker;
-}(_GeneralWorker3.default);
+}(_GeneralWorker3['default']);
 
 module.exports = NodeWorker;

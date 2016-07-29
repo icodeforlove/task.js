@@ -16,14 +16,14 @@ var _generateTaskFactoryMethod = require('../generateTaskFactoryMethod');
 
 var _generateTaskFactoryMethod2 = _interopRequireDefault(_generateTaskFactoryMethod);
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
 var defaults = {
-	maxWorkers: _os2.default.cpus().length
+	maxWorkers: _os2['default'].cpus().length
 };
 
 // expose default instance directly
-module.exports = new _WorkerManager2.default(defaults, _NodeWorker2.default);
+module.exports = new _WorkerManager2['default'](defaults, _NodeWorker2['default']);
 
 // allow custom settings (task.js factory)
-module.exports.defaults = (0, _generateTaskFactoryMethod2.default)(defaults, _NodeWorker2.default, _WorkerManager2.default);
+module.exports.defaults = (0, _generateTaskFactoryMethod2['default'])(defaults, _NodeWorker2['default'], _WorkerManager2['default']);

@@ -1,3 +1,4 @@
+import 'babel-polyfill';
 import isModern from './isModern';
 import WorkerManager from '../WorkerManager';
 import generateTaskFactoryMethod from '../generateTaskFactoryMethod';

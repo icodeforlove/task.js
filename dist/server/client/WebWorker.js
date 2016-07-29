@@ -8,7 +8,7 @@ var _GeneralWorker2 = require('../GeneralWorker');
 
 var _GeneralWorker3 = _interopRequireDefault(_GeneralWorker2);
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
 function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
 
@@ -43,7 +43,7 @@ var WebWorker = function (_GeneralWorker) {
 			_this._worker.terminate();
 		};
 
-		_this._worker = new Worker((0, _functionToObjectURL2.default)(_this.WORKER_SOURCE));
+		_this._worker = new Worker((0, _functionToObjectURL2['default'])(_this.WORKER_SOURCE));
 		_this._worker.addEventListener('message', _this._onMessage);
 
 		_this._log('initialized');
@@ -57,6 +57,6 @@ var WebWorker = function (_GeneralWorker) {
 	};
 
 	return WebWorker;
-}(_GeneralWorker3.default);
+}(_GeneralWorker3['default']);
 
 module.exports = WebWorker;

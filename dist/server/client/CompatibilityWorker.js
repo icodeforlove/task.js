@@ -4,7 +4,7 @@ var _GeneralWorker2 = require('../GeneralWorker');
 
 var _GeneralWorker3 = _interopRequireDefault(_GeneralWorker2);
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
 function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
 
@@ -66,6 +66,6 @@ var CompatibilityWorker = function (_GeneralWorker) {
 	};
 
 	return CompatibilityWorker;
-}(_GeneralWorker3.default);
+}(_GeneralWorker3['default']);
 
 module.exports = CompatibilityWorker;

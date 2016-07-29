@@ -71,7 +71,7 @@ var GeneralWorker = function () {
 
 		var message = {
 			id: task.id,
-			func: String($options.function)
+			func: String($options['function'])
 		};
 
 		// because of transferables (we want to keep this object flat)

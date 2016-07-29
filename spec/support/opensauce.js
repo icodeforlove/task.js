@@ -21,15 +21,15 @@ module.exports = function(config) {
 
 		{platform: 'Mac 10.11', browserName: 'safari', version: 'latest'},
 
-		// // Mac 10.10 Browsers
-		// {platform: 'Mac 10.10', browserName: 'chrome', version: 'latest'},
-		// {platform: 'Mac 10.10', browserName: 'firefox', version: 'latest'},
-		// {platform: 'Mac 10.10', browserName: 'safari', version: 'latest'},
+		// Mac 10.10 Browsers
+		{platform: 'Mac 10.10', browserName: 'chrome', version: 'latest'},
+		{platform: 'Mac 10.10', browserName: 'firefox', version: 'latest'},
+		{platform: 'Mac 10.10', browserName: 'safari', version: 'latest'},
 
-		// // Mac 10.9 Browsers
-		// {platform: 'Mac 10.9', browserName: 'chrome', version: 'latest'},
-		// {platform: 'Mac 10.9', browserName: 'firefox', version: 'latest'},
-		// {platform: 'Mac 10.9', browserName: 'safari', version: 'latest'},
+		// Mac 10.9 Browsers
+		{platform: 'Mac 10.9', browserName: 'chrome', version: 'latest'},
+		{platform: 'Mac 10.9', browserName: 'firefox', version: 'latest'},
+		{platform: 'Mac 10.9', browserName: 'safari', version: 'latest'},
 
 		// Android 5.1
 		{platformName: 'Android', deviceName: 'Android Emulator', platformVersion: '5.1', browserName: 'Browser'},
@@ -64,39 +64,39 @@ module.exports = function(config) {
 		// Windows XP Browsers
 		// {platform: 'Windows XP', browserName: 'chrome', version: 'latest'},
 		// {platform: 'Windows XP', browserName: 'firefox', version: 'latest'},
-		{platform: 'Windows XP', browserName: 'internet explorer', version: 'latest'},
+		// {platform: 'Windows XP', browserName: 'internet explorer', version: 'latest'},
 
 		// Windows 7 Browsers
-		// {platform: 'Windows 7', browserName: 'chrome', version: 'latest'},
-		// {platform: 'Windows 7', browserName: 'firefox', version: 'latest'},
-		// {platform: 'Windows 7', browserName: 'opera', version: 'latest'},
+		{platform: 'Windows 7', browserName: 'chrome', version: 'latest'},
+		{platform: 'Windows 7', browserName: 'firefox', version: 'latest'},
+		{platform: 'Windows 7', browserName: 'opera', version: 'latest'},
 		{platform: 'Windows 7', browserName: 'internet explorer', version: 'latest'},
 
-		// // Windows 8 Browsers
-		// {platform: 'Windows 8', browserName: 'chrome', version: 'latest'},
-		// {platform: 'Windows 8', browserName: 'firefox', version: 'latest'},
-		// {platform: 'Windows 8', browserName: 'internet explorer', version: 'latest'},
+		// Windows 8 Browsers
+		{platform: 'Windows 8', browserName: 'chrome', version: 'latest'},
+		{platform: 'Windows 8', browserName: 'firefox', version: 'latest'},
+		{platform: 'Windows 8', browserName: 'internet explorer', version: 'latest'},
 
-		// // Windows 8.1 Browsers
-		// {platform: 'Windows 8.1', browserName: 'chrome', version: 'latest'},
-		// {platform: 'Windows 8.1', browserName: 'firefox', version: 'latest'},
-		// {platform: 'Windows 8.1', browserName: 'internet explorer', version: 'latest'},
+		// Windows 8.1 Browsers
+		{platform: 'Windows 8.1', browserName: 'chrome', version: 'latest'},
+		{platform: 'Windows 8.1', browserName: 'firefox', version: 'latest'},
+		{platform: 'Windows 8.1', browserName: 'internet explorer', version: 'latest'},
 
-		// // Windows 10 Browsers
-		// {platform: 'Windows 10', browserName: 'chrome', version: 'latest'},
-		// {platform: 'Windows 10', browserName: 'chrome', version: 'latest-1'},
-		// {platform: 'Windows 10', browserName: 'chrome', version: 'latest-2'},
+		// Windows 10 Browsers
+		{platform: 'Windows 10', browserName: 'chrome', version: 'latest'},
+		{platform: 'Windows 10', browserName: 'chrome', version: 'latest-1'},
+		{platform: 'Windows 10', browserName: 'chrome', version: 'latest-2'},
 
-		// {platform: 'Windows 10', browserName: 'firefox', version: 'latest'},
-		// {platform: 'Windows 10', browserName: 'firefox', version: 'latest-1'},
-		// {platform: 'Windows 10', browserName: 'firefox', version: 'latest-2'},
+		{platform: 'Windows 10', browserName: 'firefox', version: 'latest'},
+		{platform: 'Windows 10', browserName: 'firefox', version: 'latest-1'},
+		{platform: 'Windows 10', browserName: 'firefox', version: 'latest-2'},
 
 		{platform: 'Windows 10', browserName: 'internet explorer', version: 'latest'},
 
-		// // Linux Browsers
-		// {platform: 'Linux', browserName: 'chrome', version: 'latest'},
-		// {platform: 'Linux', browserName: 'firefox', version: 'latest'},
-		// {platform: 'Linux', browserName: 'opera', version: 'latest'}
+		// Linux Browsers
+		{platform: 'Linux', browserName: 'chrome', version: 'latest'},
+		{platform: 'Linux', browserName: 'firefox', version: 'latest'},
+		{platform: 'Linux', browserName: 'opera', version: 'latest'}
 	];
 
 	// generate launcher object
@@ -158,7 +158,7 @@ module.exports = function(config) {
 
 		// level of logging
 		// possible values: config.LOG_DISABLE || config.LOG_ERROR || config.LOG_WARN || config.LOG_INFO || config.LOG_DEBUG
-		logLevel: config.LOG_DISABLE,
+		logLevel: config.LOG_WARN,
 
 		// enable / disable watching file and executing tests whenever any file changes
 		autoWatch: true,
@@ -185,6 +185,6 @@ module.exports = function(config) {
 
 		// Concurrency level
 		// how many browser should be started simultaneous
-		concurrency: 4
+		concurrency: 3
 	});
 }
