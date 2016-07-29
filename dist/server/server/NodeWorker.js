@@ -28,7 +28,7 @@ var NodeWorker = function (_GeneralWorker) {
 
 		_this._log = function (message) {
 			if (_this._debug) {
-				console.log('task.js:worker-proxy[mid(' + _this.managerId + ') wid(' + _this.id + ') pid(' + _this._worker.pid + ')]: ' + message);
+				console.log('task.js:worker[mid(' + _this.managerId + ') wid(' + _this.id + ') pid(' + _this._worker.pid + ')]: ' + message);
 			}
 		};
 

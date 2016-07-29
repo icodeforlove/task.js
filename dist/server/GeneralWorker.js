@@ -79,8 +79,6 @@ var GeneralWorker = function () {
 			message['argument' + index] = $options.arguments[index];
 		});
 
-		this._log('sending tid(' + task.id + ') to worker');
-
 		this.postMessage(message, $options.transferables);
 	};
 

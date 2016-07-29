@@ -447,7 +447,7 @@ var task =
 
 		WebWorker.prototype._log = function _log(message) {
 			if (this._debug) {
-				console.log('task.js:worker-proxy[mid(' + this.managerId + ') wid(' + this.id + ')]: ' + message);
+				console.log('task.js:worker[mid(' + this.managerId + ') wid(' + this.id + ')]: ' + message);
 			}
 		};
 
@@ -540,8 +540,6 @@ var task =
 			Object.keys($options.arguments).forEach(function (key, index) {
 				message['argument' + index] = $options.arguments[index];
 			});
-
-			this._log('sending tid(' + task.id + ') to worker');
 
 			this.postMessage(message, $options.transferables);
 		};
