@@ -1,37 +1,22 @@
-class Worker {
-	constructor ($config, WorkerProxy) {
+class GeneralWorker {
+	constructor ($config) {
 		this.id = $config.id;
 		this.managerId = $config.managerId;
 		this._debug = $config.debug;
-		this.worker = new WorkerProxy({
-			id: this.id,
-			managerId: this.managerId,
-			debug: this._debug
-		});
-		this.worker.addEventListener('message', this._onWorkerMessage);
-		this.worker.addEventListener('exit', this._onWorkerExit);
+
 		this.tasks = [];
 		this.lastTaskTimestamp = null;
-		this._debug = $config.debug;
 
 		this._onTaskComplete = $config.onTaskComplete;
 		this._onExit = $config.onExit;
-
-		this._log('initialized');
 	}
 
-	_log (message) {
-		if (this._debug) {
-			console.log(`task.js:worker[mid(${this.managerId}) wid(${this.id})]: ${message}`);
-		}
-	}
-
-	_onWorkerExit = () => {
+	handleWorkerExit = () => {
 		this._log('killed');
 		this._onExit(this);
 	}
 
-	_onWorkerMessage = (message) => {
+	handleWorkerMessage = (message) => {
 		let taskIndex = null;
 
 		this.tasks.some(function (task, index) {
@@ -88,7 +73,7 @@ class Worker {
 
 		this._log(`sending tid(${task.id}) to worker`);
 
-		this.worker.postMessage(message, $options.transferables);
+		this.postMessage(message, $options.transferables);
 	}
 
 	_purgeTasks(reason) {
@@ -101,11 +86,6 @@ class Worker {
 		});
 		this.tasks = [];
 	}
-
-	terminate () {
-		this._purgeTasks();
-		this.worker.terminate();
-	}
 }
 
-module.exports = Worker;
+module.exports = GeneralWorker;

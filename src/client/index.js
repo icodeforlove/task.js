@@ -6,7 +6,7 @@ const defaults = {
 	maxWorkers: navigator.hardwareConcurrency
 };
 
-var WorkerProxy = isModern() ? require('./WebWorkerProxy') : require('./CompatibilityWorkerProxy');
+var WorkerProxy = isModern() ? require('./WebWorker') : require('./CompatibilityWorker');
 
 // expose default instance directly
 module.exports = new WorkerManager(defaults, WorkerProxy);

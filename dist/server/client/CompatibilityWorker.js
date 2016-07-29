@@ -1,8 +1,10 @@
 'use strict';
 
-var _Worker = require('../Worker.js');
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _Worker2 = _interopRequireDefault(_Worker);
+var _GeneralWorker2 = require('../GeneralWorker');
+
+var _GeneralWorker3 = _interopRequireDefault(_GeneralWorker2);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
@@ -14,13 +16,13 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-var CompatibilityWorkerProxy = function (_GeneralWorker) {
-	_inherits(CompatibilityWorkerProxy, _GeneralWorker);
+var CompatibilityWorker = function (_GeneralWorker) {
+	_inherits(CompatibilityWorker, _GeneralWorker);
 
-	function CompatibilityWorkerProxy() {
-		_classCallCheck(this, CompatibilityWorkerProxy);
+	function CompatibilityWorker() {
+		_classCallCheck(this, CompatibilityWorker);
 
-		var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(CompatibilityWorkerProxy).apply(this, arguments));
+		var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(CompatibilityWorker).apply(this, arguments));
 
 		_this.postMessage = function (message, options) {
 			// toss it out of the event loop
@@ -53,12 +55,20 @@ var CompatibilityWorkerProxy = function (_GeneralWorker) {
 			_this._setTimeoutID = null;
 		};
 
-		_this._listeners = {};
 		_this._setTimeoutID = null;
 		return _this;
 	}
 
-	return CompatibilityWorkerProxy;
-}(_Worker2['default']);
+	_createClass(CompatibilityWorker, [{
+		key: '_log',
+		value: function _log(message) {
+			if (this._debug) {
+				console.log('task.js:worker[mid(' + this.managerId + ') wid(' + this.id + ')]: ' + message);
+			}
+		}
+	}]);
 
-module.exports = CompatibilityWorkerProxy;
+	return CompatibilityWorker;
+}(_GeneralWorker3['default']);
+
+module.exports = CompatibilityWorker;

@@ -6,9 +6,9 @@ var _functionToObjectURL = require('./functionToObjectURL');
 
 var _functionToObjectURL2 = _interopRequireDefault(_functionToObjectURL);
 
-var _Worker = require('../Worker.js');
+var _GeneralWorker2 = require('../GeneralWorker');
 
-var _Worker2 = _interopRequireDefault(_Worker);
+var _GeneralWorker3 = _interopRequireDefault(_GeneralWorker2);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
@@ -18,19 +18,13 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-var WebWorkerProxy = function (_GeneralWorker) {
-	_inherits(WebWorkerProxy, _GeneralWorker);
+var WebWorker = function (_GeneralWorker) {
+	_inherits(WebWorker, _GeneralWorker);
 
-	function WebWorkerProxy($config) {
-		_classCallCheck(this, WebWorkerProxy);
+	function WebWorker($config) {
+		_classCallCheck(this, WebWorker);
 
-		//$config = $config || {};
-
-		//this._listeners = {};
-		//this._debug = $config.debug;
-		//this.id = $config.id;
-		//this.managerId = $config.managerId;
-		var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(WebWorkerProxy).apply(this, arguments));
+		var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(WebWorker).apply(this, arguments));
 
 		_this.WORKER_SOURCE = 'function () {\n\t\tonmessage = function (event) {\n\t\t\tvar message = event.data;\n\n\t\t\tvar args = Object.keys(message).filter(function (key) {\n\t\t\t\treturn key.match(/^argument/);\n\t\t\t}).sort(function (a, b) {\n\t\t\t\treturn parseInt(a.slice(8), 10) - parseInt(b.slice(8), 10);\n\t\t\t}).map(function (key) {\n\t\t\t\treturn message[key];\n\t\t\t});\n\n\t\t\ttry {\n\t\t\t\tpostMessage({id: message.id, result: eval(\'(\' + message.func + \')\').apply(null, args)});\n\t\t\t} catch (error) {\n\t\t\t\tpostMessage({id: message.id, error: error.message});\n\t\t\t}\n\t\t}\n\t}';
 
@@ -56,7 +50,7 @@ var WebWorkerProxy = function (_GeneralWorker) {
 		return _this;
 	}
 
-	_createClass(WebWorkerProxy, [{
+	_createClass(WebWorker, [{
 		key: '_log',
 		value: function _log(message) {
 			if (this._debug) {
@@ -65,7 +59,7 @@ var WebWorkerProxy = function (_GeneralWorker) {
 		}
 	}]);
 
-	return WebWorkerProxy;
-}(_Worker2['default']);
+	return WebWorker;
+}(_GeneralWorker3['default']);
 
-module.exports = WebWorkerProxy;
+module.exports = WebWorker;

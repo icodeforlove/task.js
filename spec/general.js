@@ -1,4 +1,4 @@
-module.exports = function (task, Promise, CompatibilityWorkerProxy) {
+module.exports = function (task, Promise, CompatibilityWorker) {
 	return function() {
 		it('can use custom defaults', function() {
 			let defaults = {
@@ -89,11 +89,11 @@ module.exports = function (task, Promise, CompatibilityWorkerProxy) {
 			});
 		});
 
-		if (CompatibilityWorkerProxy) {
+		if (CompatibilityWorker) {
 			it('can run many tasks with a compatibility worker', function(done) {
 				let customTask = task.defaults({
 					maxWorkers: 1
-				}, CompatibilityWorkerProxy);
+				}, CompatibilityWorker);
 
 				function squareAsync () {
 					return customTask.run({
@@ -232,7 +232,7 @@ module.exports = function (task, Promise, CompatibilityWorkerProxy) {
 		it('can terminate', function(done) {
 			let customTask = task.defaults({
 				maxWorkers: 1
-			}, CompatibilityWorkerProxy);
+			}, CompatibilityWorker);
 
 			function pow(number) {
 				return Math.pow(number, 2);

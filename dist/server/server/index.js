@@ -4,9 +4,9 @@ var _os = require('os');
 
 var _os2 = _interopRequireDefault(_os);
 
-var _NodeWorkerProxy = require('./NodeWorkerProxy');
+var _NodeWorker = require('./NodeWorker');
 
-var _NodeWorkerProxy2 = _interopRequireDefault(_NodeWorkerProxy);
+var _NodeWorker2 = _interopRequireDefault(_NodeWorker);
 
 var _WorkerManager = require('../WorkerManager');
 
@@ -23,7 +23,7 @@ var defaults = {
 };
 
 // expose default instance directly
-module.exports = new _WorkerManager2['default'](defaults, _NodeWorkerProxy2['default']);
+module.exports = new _WorkerManager2['default'](defaults, _NodeWorker2['default']);
 
 // allow custom settings (task.js factory)
-module.exports.defaults = (0, _generateTaskFactoryMethod2['default'])(defaults, _NodeWorkerProxy2['default'], _WorkerManager2['default']);
+module.exports.defaults = (0, _generateTaskFactoryMethod2['default'])(defaults, _NodeWorker2['default'], _WorkerManager2['default']);

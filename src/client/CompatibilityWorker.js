@@ -1,24 +1,19 @@
-class CompatibilityWorkerProxy {
+import GeneralWorker from '../GeneralWorker';
+
+class CompatibilityWorker extends GeneralWorker {
 	constructor () {
-		this._listeners = {};
+		super(...arguments);
+
 		this._setTimeoutID = null;
 	}
 
-	_onMessage = (event) => {
-		let message = event;
-
-		let callbacks = this._listeners.message;
-		if (callbacks) {
-			callbacks.forEach(callback => callback(message));
+	_log (message) {
+		if (this._debug) {
+			console.log(`task.js:worker[mid(${this.managerId}) wid(${this.id})]: ${message}`);
 		}
 	}
 
-	addEventListener(event, callback) {
-		this._listeners[event] = this._listeners[event] || [];
-		this._listeners[event].push(callback);
-	}
-
-	postMessage(message, options) {
+	postMessage = (message, options) => {
 		// toss it out of the event loop
 		this._setTimeoutID = setTimeout(() => {
 			let args = Object.keys(message).filter(function (key) {
@@ -37,17 +32,17 @@ class CompatibilityWorkerProxy {
 			// we cant use eval
 			try {
 				let result = func(...args);
-				this._onMessage({id: message.id, result: result});
+				this.handleWorkerMessage({id: message.id, result: result});
 			} catch (error) {
-				this._onMessage({id: message.id, 'error': error.message});
+				this.handleWorkerMessage({id: message.id, 'error': error.message});
 			}
 		}, 1);
 	}
 
-	terminate () {
+	terminate = () => {
 		clearTimeout(this._setTimeoutID);
 		this._setTimeoutID = null;
 	}
 }
 
-module.exports = CompatibilityWorkerProxy;
+module.exports = CompatibilityWorker;

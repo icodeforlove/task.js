@@ -1,13 +1,10 @@
 import functionToObjectURL from './functionToObjectURL';
+import GeneralWorker from '../GeneralWorker';
 
-class WebWorkerProxy {
+class WebWorker extends GeneralWorker {
 	constructor ($config) {
-		$config = $config || {};
+		super(...arguments);
 
-		this._listeners = {};
-		this._debug = $config.debug;
-		this.id = $config.id;
-		this.managerId = $config.managerId;
 		this._worker = new Worker(functionToObjectURL(this.WORKER_SOURCE));
 		this._worker.addEventListener('message', this._onMessage);
 
@@ -42,28 +39,18 @@ class WebWorkerProxy {
 
 	_onMessage = (event) => {
 		let message = event.data;
-
-		let callbacks = this._listeners.message;
-		if (callbacks) {
-			this._log(`recieved task completion event`);
-			callbacks.forEach(callback => callback(message));
-		}
+		this.handleWorkerMessage(message);
 	}
 
-	addEventListener(event, callback) {
-		this._listeners[event] = this._listeners[event] || [];
-		this._listeners[event].push(callback);
-	}
-
-	postMessage(message, options) {
+	postMessage = (message, options) => {
 		this._log(`sending tid(${message.id}) to worker process`);
 		this._worker.postMessage(message, options);
 	}
 
-	terminate () {
+	terminate = () => {
 		this._log(`terminated`);
 		this._worker.terminate();
 	}
 }
 
-module.exports = WebWorkerProxy;
+module.exports = WebWorker;

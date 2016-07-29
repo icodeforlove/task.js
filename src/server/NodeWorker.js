@@ -1,22 +1,58 @@
-var globals = {};
+import cp from 'child_process';
+import GeneralWorker from '../GeneralWorker';
 
-function evalInContext(js, context) {
-    //# Return the results of the in-line anonymous function we .call with the passed context
-    return function() { return eval(js); }.call(context);
+class NodeWorker extends GeneralWorker {
+	constructor ($config) {
+		super(...arguments);
+
+		$config = $config || {};
+
+		//this._listeners = {};
+		this._worker = cp.fork(`${__dirname}/EvalWorker.js`);
+		this._worker.on('message', this._onMessage);
+		this._worker.on('exit', this._onExit);
+		this._worker.on('close', this._onExit);
+		this._worker.on('disconnect', this._onExit);
+		this._worker.on('error', this._onExit);
+		this._alive = true;
+		// this._debug = $config.debug;
+		// this.id = $config.id;
+		// this.managerId = $config.managerId;
+
+		this._log(`initialized`);
+	}
+
+	_log = (message) => {
+		if (this._debug) {
+			console.log(`task.js:worker-proxy[mid(${this.managerId}) wid(${this.id}) pid(${this._worker.pid})]: ${message}`);
+		}
+	}
+
+	_onExit = () => {
+		if (!this._alive) {
+			return;
+		}
+
+		this._log(`killed`);
+
+		this._alive = false;
+
+		this.handleWorkerExit();
+	}
+
+	_onMessage = (message) => {
+		this.handleWorkerMessage(message);
+	}
+
+	postMessage = (message) => {
+		this._log(`sending tid(${message.id}) to worker process`);
+		this._worker.send(message);
+	}
+
+	terminate = () => {
+		this._log(`terminated`);
+		this._worker.kill();
+	}
 }
 
-process.on('message', (message) => {
-	let args = Object.keys(message).filter(function (key) {
-		return key.match(/^argument/);
-	}).sort(function (a, b) {
-		return parseInt(a.slice(8), 10) - parseInt(b.slice(8), 10);
-	}).map(function (key) {
-		return message[key];
-	});
-
-	try {
-		process.send({id: message.id, result: eval('(' + message.func + ')').apply(null, args)});
-	} catch (error) {
-		process.send({id: message.id, error: error.message});
-	}
-});
+module.exports = NodeWorker;

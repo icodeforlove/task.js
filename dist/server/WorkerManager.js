@@ -4,12 +4,6 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _Worker = require('./Worker');
-
-var _Worker2 = _interopRequireDefault(_Worker);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var WorkerManager = function () {
@@ -217,13 +211,13 @@ var WorkerManager = function () {
 		value: function _createWorker() {
 			var workerId = ++this._totalWorkersCreated;
 
-			var worker = new _Worker2['default']({
+			var worker = new this._WorkerProxy({
 				debug: this._debug,
 				id: workerId,
 				managerId: this.id,
 				onTaskComplete: this._onWorkerTaskComplete,
 				onExit: this._onWorkerExit
-			}, this._WorkerProxy);
+			});
 
 			if (this._globalsInitializationFunction || this._globals) {
 				this._log('running global initialization code');

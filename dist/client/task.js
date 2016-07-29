@@ -1,4 +1,4 @@
-/*! task.js - 0.0.13 - clientside */
+/*! task.js - 0.0.14 - clientside */
 var task =
 /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
@@ -56,7 +56,7 @@ var task =
 
 	var _WorkerManager2 = _interopRequireDefault(_WorkerManager);
 
-	var _generateTaskFactoryMethod = __webpack_require__(5);
+	var _generateTaskFactoryMethod = __webpack_require__(4);
 
 	var _generateTaskFactoryMethod2 = _interopRequireDefault(_generateTaskFactoryMethod);
 
@@ -66,7 +66,7 @@ var task =
 		maxWorkers: navigator.hardwareConcurrency
 	};
 
-	var WorkerProxy = (0, _isModern2['default'])() ? __webpack_require__(6) : __webpack_require__(7);
+	var WorkerProxy = (0, _isModern2['default'])() ? __webpack_require__(5) : __webpack_require__(7);
 
 	// expose default instance directly
 	module.exports = new _WorkerManager2['default'](defaults, WorkerProxy);
@@ -125,19 +125,13 @@ var task =
 
 /***/ },
 /* 3 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ function(module, exports) {
 
 	'use strict';
 
 	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-	var _Worker = __webpack_require__(4);
-
-	var _Worker2 = _interopRequireDefault(_Worker);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -346,13 +340,13 @@ var task =
 			value: function _createWorker() {
 				var workerId = ++this._totalWorkersCreated;
 
-				var worker = new _Worker2['default']({
+				var worker = new this._WorkerProxy({
 					debug: this._debug,
 					id: workerId,
 					managerId: this.id,
 					onTaskComplete: this._onWorkerTaskComplete,
 					onExit: this._onWorkerExit
-				}, this._WorkerProxy);
+				});
 
 				if (this._globalsInitializationFunction || this._globals) {
 					this._log('running global initialization code');
@@ -388,24 +382,118 @@ var task =
 /* 4 */
 /***/ function(module, exports) {
 
+	"use strict";
+
+	module.exports = function generateTaskFactoryMethod(defaults, WorkerProxy, WorkerManager) {
+		return function ($config, WorkerProxyOverride) {
+			var config = {};
+
+			// clone defaults
+			Object.keys(defaults).forEach(function (key) {
+				return config[key] = defaults[key];
+			});
+
+			// apply user settings
+			Object.keys($config).forEach(function (key) {
+				return config[key] = $config[key];
+			});
+
+			return new WorkerManager(config, WorkerProxyOverride || WorkerProxy);
+		};
+	};
+
+/***/ },
+/* 5 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	var _functionToObjectURL = __webpack_require__(2);
+
+	var _functionToObjectURL2 = _interopRequireDefault(_functionToObjectURL);
+
+	var _GeneralWorker2 = __webpack_require__(6);
+
+	var _GeneralWorker3 = _interopRequireDefault(_GeneralWorker2);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+	var WebWorker = function (_GeneralWorker) {
+		_inherits(WebWorker, _GeneralWorker);
+
+		function WebWorker($config) {
+			_classCallCheck(this, WebWorker);
+
+			var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(WebWorker).apply(this, arguments));
+
+			_this.WORKER_SOURCE = 'function () {\n\t\tonmessage = function (event) {\n\t\t\tvar message = event.data;\n\n\t\t\tvar args = Object.keys(message).filter(function (key) {\n\t\t\t\treturn key.match(/^argument/);\n\t\t\t}).sort(function (a, b) {\n\t\t\t\treturn parseInt(a.slice(8), 10) - parseInt(b.slice(8), 10);\n\t\t\t}).map(function (key) {\n\t\t\t\treturn message[key];\n\t\t\t});\n\n\t\t\ttry {\n\t\t\t\tpostMessage({id: message.id, result: eval(\'(\' + message.func + \')\').apply(null, args)});\n\t\t\t} catch (error) {\n\t\t\t\tpostMessage({id: message.id, error: error.message});\n\t\t\t}\n\t\t}\n\t}';
+
+			_this._onMessage = function (event) {
+				var message = event.data;
+				_this.handleWorkerMessage(message);
+			};
+
+			_this.postMessage = function (message, options) {
+				_this._log('sending tid(' + message.id + ') to worker process');
+				_this._worker.postMessage(message, options);
+			};
+
+			_this.terminate = function () {
+				_this._log('terminated');
+				_this._worker.terminate();
+			};
+
+			_this._worker = new Worker((0, _functionToObjectURL2['default'])(_this.WORKER_SOURCE));
+			_this._worker.addEventListener('message', _this._onMessage);
+
+			_this._log('initialized');
+			return _this;
+		}
+
+		_createClass(WebWorker, [{
+			key: '_log',
+			value: function _log(message) {
+				if (this._debug) {
+					console.log('task.js:worker-proxy[mid(' + this.managerId + ') wid(' + this.id + ')]: ' + message);
+				}
+			}
+		}]);
+
+		return WebWorker;
+	}(_GeneralWorker3['default']);
+
+	module.exports = WebWorker;
+
+/***/ },
+/* 6 */
+/***/ function(module, exports) {
+
 	'use strict';
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-	var Worker = function () {
-		function Worker($config, WorkerProxy) {
+	var GeneralWorker = function () {
+		function GeneralWorker($config) {
 			var _this = this;
 
-			_classCallCheck(this, Worker);
+			_classCallCheck(this, GeneralWorker);
 
-			this._onWorkerExit = function () {
+			this.handleWorkerExit = function () {
 				_this._log('killed');
 				_this._onExit(_this);
 			};
 
-			this._onWorkerMessage = function (message) {
+			this.handleWorkerMessage = function (message) {
 				var taskIndex = null;
 
 				_this.tasks.some(function (task, index) {
@@ -440,31 +528,15 @@ var task =
 			this.id = $config.id;
 			this.managerId = $config.managerId;
 			this._debug = $config.debug;
-			this.worker = new WorkerProxy({
-				id: this.id,
-				managerId: this.managerId,
-				debug: this._debug
-			});
-			this.worker.addEventListener('message', this._onWorkerMessage);
-			this.worker.addEventListener('exit', this._onWorkerExit);
+
 			this.tasks = [];
 			this.lastTaskTimestamp = null;
-			this._debug = $config.debug;
 
 			this._onTaskComplete = $config.onTaskComplete;
 			this._onExit = $config.onExit;
-
-			this._log('initialized');
 		}
 
-		_createClass(Worker, [{
-			key: '_log',
-			value: function _log(message) {
-				if (this._debug) {
-					console.log('task.js:worker[mid(' + this.managerId + ') wid(' + this.id + ')]: ' + message);
-				}
-			}
-		}, {
+		_createClass(GeneralWorker, [{
 			key: 'run',
 			value: function run($options) {
 				this.lastTaskTimestamp = new Date();
@@ -491,7 +563,7 @@ var task =
 
 				this._log('sending tid(' + task.id + ') to worker');
 
-				this.worker.postMessage(message, $options.transferables);
+				this.postMessage(message, $options.transferables);
 			}
 		}, {
 			key: '_purgeTasks',
@@ -505,169 +577,46 @@ var task =
 				});
 				this.tasks = [];
 			}
-		}, {
-			key: 'terminate',
-			value: function terminate() {
-				this._purgeTasks();
-				this.worker.terminate();
-			}
 		}]);
 
-		return Worker;
+		return GeneralWorker;
 	}();
 
-	module.exports = Worker;
+	module.exports = GeneralWorker;
 
 /***/ },
-/* 5 */
-/***/ function(module, exports) {
-
-	"use strict";
-
-	module.exports = function generateTaskFactoryMethod(defaults, WorkerProxy, WorkerManager) {
-		return function ($config, WorkerProxyOverride) {
-			var config = {};
-
-			// clone defaults
-			Object.keys(defaults).forEach(function (key) {
-				return config[key] = defaults[key];
-			});
-
-			// apply user settings
-			Object.keys($config).forEach(function (key) {
-				return config[key] = $config[key];
-			});
-
-			return new WorkerManager(config, WorkerProxyOverride || WorkerProxy);
-		};
-	};
-
-/***/ },
-/* 6 */
+/* 7 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-	var _functionToObjectURL = __webpack_require__(2);
+	var _GeneralWorker2 = __webpack_require__(6);
 
-	var _functionToObjectURL2 = _interopRequireDefault(_functionToObjectURL);
+	var _GeneralWorker3 = _interopRequireDefault(_GeneralWorker2);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-	var WebWorkerProxy = function () {
-		function WebWorkerProxy($config) {
-			var _this = this;
-
-			_classCallCheck(this, WebWorkerProxy);
-
-			this.WORKER_SOURCE = 'function () {\n\t\tonmessage = function (event) {\n\t\t\tvar message = event.data;\n\n\t\t\tvar args = Object.keys(message).filter(function (key) {\n\t\t\t\treturn key.match(/^argument/);\n\t\t\t}).sort(function (a, b) {\n\t\t\t\treturn parseInt(a.slice(8), 10) - parseInt(b.slice(8), 10);\n\t\t\t}).map(function (key) {\n\t\t\t\treturn message[key];\n\t\t\t});\n\n\t\t\ttry {\n\t\t\t\tpostMessage({id: message.id, result: eval(\'(\' + message.func + \')\').apply(null, args)});\n\t\t\t} catch (error) {\n\t\t\t\tpostMessage({id: message.id, error: error.message});\n\t\t\t}\n\t\t}\n\t}';
-
-			this._onMessage = function (event) {
-				var message = event.data;
-
-				var callbacks = _this._listeners.message;
-				if (callbacks) {
-					_this._log('recieved task completion event');
-					callbacks.forEach(function (callback) {
-						return callback(message);
-					});
-				}
-			};
-
-			$config = $config || {};
-
-			this._listeners = {};
-			this._debug = $config.debug;
-			this.id = $config.id;
-			this.managerId = $config.managerId;
-			this._worker = new Worker((0, _functionToObjectURL2['default'])(this.WORKER_SOURCE));
-			this._worker.addEventListener('message', this._onMessage);
-
-			this._log('initialized');
-		}
-
-		_createClass(WebWorkerProxy, [{
-			key: '_log',
-			value: function _log(message) {
-				if (this._debug) {
-					console.log('task.js:worker-proxy[mid(' + this.managerId + ') wid(' + this.id + ')]: ' + message);
-				}
-			}
-		}, {
-			key: 'addEventListener',
-			value: function addEventListener(event, callback) {
-				this._listeners[event] = this._listeners[event] || [];
-				this._listeners[event].push(callback);
-			}
-		}, {
-			key: 'postMessage',
-			value: function postMessage(message, options) {
-				this._log('sending tid(' + message.id + ') to worker process');
-				this._worker.postMessage(message, options);
-			}
-		}, {
-			key: 'terminate',
-			value: function terminate() {
-				this._log('terminated');
-				this._worker.terminate();
-			}
-		}]);
-
-		return WebWorkerProxy;
-	}();
-
-	module.exports = WebWorkerProxy;
-
-/***/ },
-/* 7 */
-/***/ function(module, exports) {
-
-	'use strict';
-
-	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-	var CompatibilityWorkerProxy = function () {
-		function CompatibilityWorkerProxy() {
-			var _this = this;
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
 
-			_classCallCheck(this, CompatibilityWorkerProxy);
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-			this._onMessage = function (event) {
-				var message = event;
+	var CompatibilityWorker = function (_GeneralWorker) {
+		_inherits(CompatibilityWorker, _GeneralWorker);
 
-				var callbacks = _this._listeners.message;
-				if (callbacks) {
-					callbacks.forEach(function (callback) {
-						return callback(message);
-					});
-				}
-			};
+		function CompatibilityWorker() {
+			_classCallCheck(this, CompatibilityWorker);
 
-			this._listeners = {};
-			this._setTimeoutID = null;
-		}
+			var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(CompatibilityWorker).apply(this, arguments));
 
-		_createClass(CompatibilityWorkerProxy, [{
-			key: 'addEventListener',
-			value: function addEventListener(event, callback) {
-				this._listeners[event] = this._listeners[event] || [];
-				this._listeners[event].push(callback);
-			}
-		}, {
-			key: 'postMessage',
-			value: function postMessage(message, options) {
-				var _this2 = this;
-
+			_this.postMessage = function (message, options) {
 				// toss it out of the event loop
-				this._setTimeoutID = setTimeout(function () {
+				_this._setTimeoutID = setTimeout(function () {
 					var args = Object.keys(message).filter(function (key) {
 						return key.match(/^argument/);
 					}).sort(function (a, b) {
@@ -684,24 +633,35 @@ var task =
 					// we cant use eval
 					try {
 						var result = func.apply(undefined, _toConsumableArray(args));
-						_this2._onMessage({ id: message.id, result: result });
+						_this.handleWorkerMessage({ id: message.id, result: result });
 					} catch (error) {
-						_this2._onMessage({ id: message.id, 'error': error.message });
+						_this.handleWorkerMessage({ id: message.id, 'error': error.message });
 					}
 				}, 1);
-			}
-		}, {
-			key: 'terminate',
-			value: function terminate() {
-				clearTimeout(this._setTimeoutID);
-				this._setTimeoutID = null;
+			};
+
+			_this.terminate = function () {
+				clearTimeout(_this._setTimeoutID);
+				_this._setTimeoutID = null;
+			};
+
+			_this._setTimeoutID = null;
+			return _this;
+		}
+
+		_createClass(CompatibilityWorker, [{
+			key: '_log',
+			value: function _log(message) {
+				if (this._debug) {
+					console.log('task.js:worker[mid(' + this.managerId + ') wid(' + this.id + ')]: ' + message);
+				}
 			}
 		}]);
 
-		return CompatibilityWorkerProxy;
-	}();
+		return CompatibilityWorker;
+	}(_GeneralWorker3['default']);
 
-	module.exports = CompatibilityWorkerProxy;
+	module.exports = CompatibilityWorker;
 
 /***/ }
 /******/ ]);

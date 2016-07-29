@@ -1,5 +1,3 @@
-import Worker from './Worker';
-
 class WorkerManager {
 	constructor ($config, WorkerProxy) {
 		$config = $config || {};
@@ -190,13 +188,13 @@ class WorkerManager {
 	_createWorker () {
 		var workerId = ++this._totalWorkersCreated;
 
-		let worker = new Worker({
+		let worker = new this._WorkerProxy({
 			debug: this._debug,
 			id: workerId,
 			managerId: this.id,
 			onTaskComplete: this._onWorkerTaskComplete,
 			onExit: this._onWorkerExit
-		}, this._WorkerProxy);
+		});
 
 		if (this._globalsInitializationFunction || this._globals) {
 			this._log(`running global initialization code`);

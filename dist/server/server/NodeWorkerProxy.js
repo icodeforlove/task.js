@@ -1,18 +1,36 @@
 'use strict';
 
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+var _child_process = require('child_process');
+
+var _child_process2 = _interopRequireDefault(_child_process);
+
+var _Worker = require('../Worker.js');
+
+var _Worker2 = _interopRequireDefault(_Worker);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var cp = require('child_process');
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
 
-var NodeWorkerProxy = function () {
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var NodeWorkerProxy = function (_GeneralWorker) {
+	_inherits(NodeWorkerProxy, _GeneralWorker);
+
 	function NodeWorkerProxy($config) {
-		var _this = this;
-
 		_classCallCheck(this, NodeWorkerProxy);
 
-		this._onExit = function () {
+		var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(NodeWorkerProxy).apply(this, arguments));
+
+		_this._log = function (message) {
+			if (_this._debug) {
+				console.log('task.js:worker-proxy[mid(' + _this.managerId + ') wid(' + _this.id + ') pid(' + _this._worker.pid + ')]: ' + message);
+			}
+		};
+
+		_this._onExit = function () {
 			if (!_this._alive) {
 				return;
 			}
@@ -21,70 +39,43 @@ var NodeWorkerProxy = function () {
 
 			_this._alive = false;
 
-			var callbacks = _this._listeners.exit;
-			if (callbacks) {
-				callbacks.forEach(function (callback) {
-					return callback();
-				});
-			}
+			_this.handleWorkerExit();
 		};
 
-		this._onMessage = function (message) {
-			var callbacks = _this._listeners.message;
-			if (callbacks) {
-				_this._log('recieved tid(' + message.id + ') completion event');
-				callbacks.forEach(function (callback) {
-					return callback(message);
-				});
-			}
+		_this._onMessage = function (message) {
+			_this.handleWorkerMessage(message);
+		};
+
+		_this.postMessage = function (message) {
+			_this._log('sending tid(' + message.id + ') to worker process');
+			_this._worker.send(message);
+		};
+
+		_this.terminate = function () {
+			_this._log('terminated');
+			//this._listeners = {};
+			_this._worker.kill();
 		};
 
 		$config = $config || {};
 
-		this._listeners = {};
-		this._worker = cp.fork(__dirname + '/NodeWorker.js');
-		this._worker.on('message', this._onMessage);
-		this._worker.on('exit', this._onExit);
-		this._worker.on('close', this._onExit);
-		this._worker.on('disconnect', this._onExit);
-		this._worker.on('error', this._onExit);
-		this._alive = true;
-		this._debug = $config.debug;
-		this.id = $config.id;
-		this.managerId = $config.managerId;
+		//this._listeners = {};
+		_this._worker = _child_process2['default'].fork(__dirname + '/NodeWorker.js');
+		_this._worker.on('message', _this._onMessage);
+		_this._worker.on('exit', _this._onExit);
+		_this._worker.on('close', _this._onExit);
+		_this._worker.on('disconnect', _this._onExit);
+		_this._worker.on('error', _this._onExit);
+		_this._alive = true;
+		// this._debug = $config.debug;
+		// this.id = $config.id;
+		// this.managerId = $config.managerId;
 
-		this._log('initialized');
+		_this._log('initialized');
+		return _this;
 	}
 
-	_createClass(NodeWorkerProxy, [{
-		key: '_log',
-		value: function _log(message) {
-			if (this._debug) {
-				console.log('task.js:worker-proxy[mid(' + this.managerId + ') wid(' + this.id + ') pid(' + this._worker.pid + ')]: ' + message);
-			}
-		}
-	}, {
-		key: 'addEventListener',
-		value: function addEventListener(event, callback) {
-			this._listeners[event] = this._listeners[event] || [];
-			this._listeners[event].push(callback);
-		}
-	}, {
-		key: 'postMessage',
-		value: function postMessage(message) {
-			this._log('sending tid(' + message.id + ') to worker process');
-			this._worker.send(message);
-		}
-	}, {
-		key: 'terminate',
-		value: function terminate() {
-			this._log('terminated');
-			this._listeners = {};
-			this._worker.kill();
-		}
-	}]);
-
 	return NodeWorkerProxy;
-}();
+}(_Worker2['default']);
 
 module.exports = NodeWorkerProxy;

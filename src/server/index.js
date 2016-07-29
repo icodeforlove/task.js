@@ -1,5 +1,5 @@
 import os from 'os';
-import NodeWorkerProxy from './NodeWorkerProxy';
+import NodeWorker from './NodeWorker';
 import WorkerManager from '../WorkerManager';
 import generateTaskFactoryMethod from '../generateTaskFactoryMethod';
 
@@ -8,7 +8,7 @@ const defaults = {
 };
 
 // expose default instance directly
-module.exports = new WorkerManager(defaults, NodeWorkerProxy);
+module.exports = new WorkerManager(defaults, NodeWorker);
 
 // allow custom settings (task.js factory)
-module.exports.defaults = generateTaskFactoryMethod(defaults, NodeWorkerProxy, WorkerManager);
+module.exports.defaults = generateTaskFactoryMethod(defaults, NodeWorker, WorkerManager);
