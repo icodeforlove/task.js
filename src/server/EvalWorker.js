@@ -1,10 +1,5 @@
 var globals = {};
 
-function evalInContext(js, context) {
-    //# Return the results of the in-line anonymous function we .call with the passed context
-    return function() { return eval(js); }.call(context);
-}
-
 process.on('message', (message) => {
 	let args = Object.keys(message).filter(function (key) {
 		return key.match(/^argument/);
