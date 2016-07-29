@@ -96,7 +96,7 @@ var WorkerManager = function () {
 			throw new Error('task.js: "arguments" is required property, and it must be an array/array-like');
 		}
 
-		if (!task['function'] && (typeof task['function'] !== 'function' || typeof task['function'] !== 'string')) {
+		if (!task.function && (typeof task.function !== 'function' || typeof task.function !== 'string')) {
 			throw new Error('task.js: "function" is required property, and it must be a string or a function');
 		}
 
@@ -126,7 +126,7 @@ var WorkerManager = function () {
 			worker.run({
 				id: ++WorkerManager.taskCount,
 				arguments: args,
-				'function': func,
+				function: func,
 				resolve: resolve,
 				reject: reject
 			});
@@ -146,7 +146,7 @@ var WorkerManager = function () {
 
 			return this.run({
 				arguments: args,
-				'function': func,
+				function: func,
 				callback: callback
 			});
 		}.bind(this);
