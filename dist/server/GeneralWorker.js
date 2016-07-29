@@ -1,7 +1,5 @@
 'use strict';
 
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var GeneralWorker = function () {
@@ -58,48 +56,44 @@ var GeneralWorker = function () {
 		this._onExit = $config.onExit;
 	}
 
-	_createClass(GeneralWorker, [{
-		key: 'run',
-		value: function run($options) {
-			this.lastTaskTimestamp = new Date();
+	GeneralWorker.prototype.run = function run($options) {
+		this.lastTaskTimestamp = new Date();
 
-			var task = {
-				id: $options.id,
-				resolve: $options.resolve,
-				reject: $options.reject,
-				callback: $options.callback,
-				$options: $options
-			};
+		var task = {
+			id: $options.id,
+			resolve: $options.resolve,
+			reject: $options.reject,
+			callback: $options.callback,
+			$options: $options
+		};
 
-			this.tasks.push(task);
+		this.tasks.push(task);
 
-			var message = {
-				id: task.id,
-				func: String($options['function'])
-			};
+		var message = {
+			id: task.id,
+			func: String($options.function)
+		};
 
-			// because of transferables (we want to keep this object flat)
-			Object.keys($options.arguments).forEach(function (key, index) {
-				message['argument' + index] = $options.arguments[index];
-			});
+		// because of transferables (we want to keep this object flat)
+		Object.keys($options.arguments).forEach(function (key, index) {
+			message['argument' + index] = $options.arguments[index];
+		});
 
-			this._log('sending tid(' + task.id + ') to worker');
+		this._log('sending tid(' + task.id + ') to worker');
 
-			this.postMessage(message, $options.transferables);
-		}
-	}, {
-		key: '_purgeTasks',
-		value: function _purgeTasks(reason) {
-			this.tasks.forEach(function (task) {
-				if (task.callback) {
-					task.callback(reason);
-				} else {
-					task.reject(reason);
-				}
-			});
-			this.tasks = [];
-		}
-	}]);
+		this.postMessage(message, $options.transferables);
+	};
+
+	GeneralWorker.prototype._purgeTasks = function _purgeTasks(reason) {
+		this.tasks.forEach(function (task) {
+			if (task.callback) {
+				task.callback(reason);
+			} else {
+				task.reject(reason);
+			}
+		});
+		this.tasks = [];
+	};
 
 	return GeneralWorker;
 }();

@@ -1,4 +1,4 @@
 {
-	"presets": ["stage-0", "es2015"],
-	"plugins": ["transform-es3-member-expression-literals", "transform-es3-property-literals", "transform-class-properties"]
+	"presets": ["stage-0", "es2015-ie"],
+	"plugins": ["transform-class-properties"]
 }
