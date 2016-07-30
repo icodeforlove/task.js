@@ -9,7 +9,7 @@ class CompatibilityWorker extends GeneralWorker {
 
 	_log (message) {
 		if (this._debug) {
-			console.log(`task.js:worker[mid(${this.managerId}) wid(${this.id})]: ${message}`);
+			this._logger(`task.js:worker[mid(${this.managerId}) wid(${this.id})]: ${message}`);
 		}
 	}
 

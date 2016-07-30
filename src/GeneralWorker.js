@@ -3,6 +3,7 @@ class GeneralWorker {
 		this.id = $config.id;
 		this.managerId = $config.managerId;
 		this._debug = $config.debug;
+		this._logger = $config.logger;
 
 		this.tasks = [];
 		this.lastTaskTimestamp = null;
@@ -70,8 +71,6 @@ class GeneralWorker {
 		Object.keys($options.arguments).forEach(function (key, index) {
 			message['argument' + index] = $options.arguments[index];
 		});
-
-		this._log(`sending tid(${task.id}) to worker`);
 
 		this.postMessage(message, $options.transferables);
 	}

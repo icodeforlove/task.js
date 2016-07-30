@@ -28,7 +28,7 @@ var NodeWorker = function (_GeneralWorker) {
 
 		_this._log = function (message) {
 			if (_this._debug) {
-				console.log('task.js:worker-proxy[mid(' + _this.managerId + ') wid(' + _this.id + ') pid(' + _this._worker.pid + ')]: ' + message);
+				_this._logger('task.js:worker[mid(' + _this.managerId + ') wid(' + _this.id + ') pid(' + _this._worker.pid + ')]: ' + message);
 			}
 		};
 
@@ -60,7 +60,6 @@ var NodeWorker = function (_GeneralWorker) {
 
 		$config = $config || {};
 
-		//this._listeners = {};
 		_this._worker = _child_process2.default.fork(__dirname + '/EvalWorker.js');
 		_this._worker.on('message', _this._onMessage);
 		_this._worker.on('exit', _this._onExit);
@@ -68,9 +67,6 @@ var NodeWorker = function (_GeneralWorker) {
 		_this._worker.on('disconnect', _this._onExit);
 		_this._worker.on('error', _this._onExit);
 		_this._alive = true;
-		// this._debug = $config.debug;
-		// this.id = $config.id;
-		// this.managerId = $config.managerId;
 
 		_this._log('initialized');
 		return _this;

@@ -7,7 +7,6 @@ class NodeWorker extends GeneralWorker {
 
 		$config = $config || {};
 
-		//this._listeners = {};
 		this._worker = cp.fork(`${__dirname}/EvalWorker.js`);
 		this._worker.on('message', this._onMessage);
 		this._worker.on('exit', this._onExit);
@@ -15,16 +14,13 @@ class NodeWorker extends GeneralWorker {
 		this._worker.on('disconnect', this._onExit);
 		this._worker.on('error', this._onExit);
 		this._alive = true;
-		// this._debug = $config.debug;
-		// this.id = $config.id;
-		// this.managerId = $config.managerId;
 
 		this._log(`initialized`);
 	}
 
 	_log = (message) => {
 		if (this._debug) {
-			console.log(`task.js:worker-proxy[mid(${this.managerId}) wid(${this.id}) pid(${this._worker.pid})]: ${message}`);
+			this._logger(`task.js:worker[mid(${this.managerId}) wid(${this.id}) pid(${this._worker.pid})]: ${message}`);
 		}
 	}
 

@@ -1,6 +1,8 @@
 # task.js [![Build Status](https://img.shields.io/travis/icodeforlove/task.js.svg?branch=master)](https://travis-ci.org/icodeforlove/task.js) [![Code Climate](https://img.shields.io/codeclimate/github/icodeforlove/task.js.svg)](https://codeclimate.com/github/icodeforlove/task.js)
 This modules is intended to make working with blocking tasks a bit easier, and is meant to work in node as well as the browser.
 
+## [live example](http://codepen.io/icodeforlove/full/ZOjBBB/)
+
 ## install
 
 ```
@@ -15,7 +17,7 @@ or
 bower install task
 ```
 
-or just grab the [cdnjs hosted version](https://cdnjs.cloudflare.com/ajax/libs/task.js/0.0.16/task.min.js) directly
+or just grab the [cdnjs hosted version](https://cdnjs.cloudflare.com/ajax/libs/task.js/0.0.17/task.min.js) directly
 
 ## important
 
@@ -57,6 +59,7 @@ You can override the defaults like this
 // overriding defaults (optional)
 var myCustomTask = task.defaults({
 	debug: false, // extremely verbose, you should also set maxWorkers to 1
+	logger: console.log, // (default: console.log, this is useful if you want to parse all log messages)
 	warmStart: false, // (default: false, if set to true all workers will be initialized instantly)
 	maxWorkers: 4, // (default: the system max, or 4 if it can't be resolved)
 	idleTimeout: 10000, // (default: false)

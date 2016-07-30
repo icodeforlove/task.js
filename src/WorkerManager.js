@@ -5,6 +5,7 @@ class WorkerManager {
 		this.id = ++WorkerManager.managerCount;
 
 		this._WorkerProxy = WorkerProxy;
+		this._logger = $config.logger || console.log;
 
 		this._maxWorkers = $config.maxWorkers || 4;
 		this._idleTimeout = $config.idleTimeout === false ? false : $config.idleTimeout;
@@ -36,7 +37,7 @@ class WorkerManager {
 
 	_log (message) {
 		if (this._debug) {
-			console.log(`task.js:manager[mid(${this.id})] ${message}`);
+			this._logger(`task.js:manager[mid(${this.id})] ${message}`);
 		}
 	}
 
@@ -190,6 +191,7 @@ class WorkerManager {
 
 		let worker = new this._WorkerProxy({
 			debug: this._debug,
+			logger: this._logger,
 			id: workerId,
 			managerId: this.id,
 			onTaskComplete: this._onWorkerTaskComplete,
