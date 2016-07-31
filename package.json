@@ -1,6 +1,6 @@
 {
   "name": "task.js",
-  "version": "0.0.17",
+  "version": "0.0.18",
   "description": "Simplified interface for getting code to run on different cores (node.js, and web)",
   "main": "index.js",
   "scripts": {
@@ -30,5 +30,9 @@
     "karma-sauce-launcher": "^1.0.0",
     "karma-webpack": "^1.7.0",
     "webpack": "^1.13.1"
+  },
+  "browser": {
+    "os": false,
+    "child_process": false
   }
 }
