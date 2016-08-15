@@ -1,6 +1,6 @@
 {
 	"name": "task",
-	"version": "0.0.18",
+	"version": "0.0.19",
 	"description": "Simplified interface for getting code to run on different cores (node.js, and web)",
 	"main": "dist/client/task.min.js",
 	"authors": [
