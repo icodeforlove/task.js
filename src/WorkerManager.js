@@ -79,6 +79,21 @@ class WorkerManager {
 		}
 	}
 
+	setGlobals (globals) {
+		// terminate all existing workers
+		this._workers.forEach(function (worker) {
+			worker.terminate();
+		});
+
+		// flush worker pool
+		this._workers = [];
+
+		// replace globals
+		this._globals = globals;
+
+		this._next();
+	}
+
 	_runOnWorker(worker, args, func) {
 		return new Promise (function (resolve, reject) {
 			worker.run({

@@ -122,6 +122,21 @@ var WorkerManager = function () {
 		}
 	};
 
+	WorkerManager.prototype.setGlobals = function setGlobals(globals) {
+		// terminate all existing workers
+		this._workers.forEach(function (worker) {
+			worker.terminate();
+		});
+
+		// flush worker pool
+		this._workers = [];
+
+		// replace globals
+		this._globals = globals;
+
+		this._next();
+	};
+
 	WorkerManager.prototype._runOnWorker = function _runOnWorker(worker, args, func) {
 		return new Promise(function (resolve, reject) {
 			worker.run({

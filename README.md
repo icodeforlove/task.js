@@ -173,6 +173,18 @@ task.defaults({
 
 Keep in mind that it is ok to have a slow initialize, no work will actually be processed until there is a fully initialized worker.
 
+## task.setGlobals
+
+You can set globals across all of your workers like this
+
+```javascript
+task.setGlobals({
+	data: {one: 1}
+});
+```
+
+The above will kill all current workers, create new ones, and then assign the new workers the outstanding tasks.
+
 ## compatibility
 
 [![Selenium Test Status](https://saucelabs.com/browser-matrix/task-js.svg)](https://saucelabs.com/u/task-js)

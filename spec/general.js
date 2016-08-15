@@ -252,5 +252,32 @@ module.exports = function (task, Promise, CompatibilityWorker) {
 				done();
 			});
 		});
+
+		it('can use setGlobals', function () {
+			let customTask = task.defaults({
+				globals: {
+					test:1
+				}
+			});
+
+			customTask.setGlobals({
+				test: 2
+			});
+
+			customTask.setGlobals({
+				test: 3
+			});
+
+			customTask.setGlobals({
+				test: 4
+			});
+
+			customTask.wrap(function () {
+				return globals;
+			})().then(function (globals) {
+				expect(globals.test).toEqual(4);
+				done();
+			});
+		});
 	}
 };

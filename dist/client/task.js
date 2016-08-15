@@ -1,4 +1,4 @@
-/*! task.js - 0.0.17 - clientside */
+/*! task.js - 0.0.18 - clientside */
 var task =
 /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
@@ -249,6 +249,21 @@ var task =
 				this._queue.push(task);
 				this._next();
 			}
+		};
+
+		WorkerManager.prototype.setGlobals = function setGlobals(globals) {
+			// terminate all existing workers
+			this._workers.forEach(function (worker) {
+				worker.terminate();
+			});
+
+			// flush worker pool
+			this._workers = [];
+
+			// replace globals
+			this._globals = globals;
+
+			this._next();
 		};
 
 		WorkerManager.prototype._runOnWorker = function _runOnWorker(worker, args, func) {
