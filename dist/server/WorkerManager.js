@@ -168,6 +168,11 @@ var WorkerManager = function () {
 		}.bind(this);
 	};
 
+	WorkerManager.prototype.decorate = function decorate(target, key) {
+		target[key] = this.wrap(target[key]);
+		return target;
+	};
+
 	WorkerManager.prototype.terminate = function terminate() {
 		this._log('terminated');
 

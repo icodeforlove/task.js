@@ -1,4 +1,4 @@
-/*! task.js - 0.0.19 - clientside */
+/*! task.js - 0.0.20 - clientside */
 var task =
 /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
@@ -295,6 +295,11 @@ var task =
 					callback: callback
 				});
 			}.bind(this);
+		};
+
+		WorkerManager.prototype.decorate = function decorate(target, key) {
+			target[key] = this.wrap(target[key]);
+			return target;
 		};
 
 		WorkerManager.prototype.terminate = function terminate() {
