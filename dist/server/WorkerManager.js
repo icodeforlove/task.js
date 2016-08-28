@@ -10,6 +10,11 @@ var WorkerManager = function () {
 
 		_classCallCheck(this, WorkerManager);
 
+		this.decorate = function (target, key) {
+			target[key] = _this.wrap(target[key]);
+			return target;
+		};
+
 		this._next = function () {
 			if (!_this._queue.length) return;
 
@@ -166,11 +171,6 @@ var WorkerManager = function () {
 				callback: callback
 			});
 		}.bind(this);
-	};
-
-	WorkerManager.prototype.decorate = function decorate(target, key) {
-		target[key] = this.wrap(target[key]);
-		return target;
 	};
 
 	WorkerManager.prototype.terminate = function terminate() {

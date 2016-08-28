@@ -89,6 +89,19 @@ powTask(2).then(function (squaredNumber) {
 
 But keep in mind that your function cannot reference anything inside of your current scope because it is running inside of a worker.
 
+## task.decorate
+
+You can use task decorate for class methods.
+
+```javascript
+class MathTask () {
+	@task.decorate
+	pow(num, pow) {
+		return Math.pow(num, pow);
+	}
+}
+```
+
 ## task.run
 
 Below is an example of using a transferable

@@ -125,7 +125,7 @@ class WorkerManager {
 		}.bind(this);
 	}
 
-	decorate (target, key) {
+	decorate = (target, key) => {
 		target[key] = this.wrap(target[key]);
 		return target;
 	}
