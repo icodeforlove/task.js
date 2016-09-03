@@ -107,16 +107,21 @@ class MathTask () {
 Below is an example of using a transferable
 
 ```javascript
-var buffer = new ArrayBuffer();
+// create buffer backed array
+var array = new Float32Array([1,3,3,7]);
 
 task.run({
-	arguments: [buffer, 1234],
-	transferables: [buffer] // optional, and only supported client-side
-	function: function (message) {
-		return message.buffer;
-	}
+    arguments: [array.buffer],
+    transferables: [array.buffer], // optional, and only supported client-side
+    // if the browser supports transferables `array` will get zeroed out because 
+    // we flagged the buffer arg as transferable.
+    function: function (buffer) {
+    	// do intensive operations on your buffer
+        return buffer;
+    }
 }).then(function (buffer) {
-	console.log(buffer); // 4
+    // convert buffer back into original type
+    console.log(new Float32Array(buffer)); // [1,3,3,7]
 });
 ```
 
