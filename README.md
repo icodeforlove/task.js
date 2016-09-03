@@ -1,5 +1,5 @@
 # task.js [![Build Status](https://img.shields.io/travis/icodeforlove/task.js.svg?branch=master)](https://travis-ci.org/icodeforlove/task.js) [![Code Climate](https://img.shields.io/codeclimate/github/icodeforlove/task.js.svg)](https://codeclimate.com/github/icodeforlove/task.js)
-This modules is intended to make working with blocking tasks a bit easier, and is meant to work in node as well as the browser.
+This module is intended to make working with blocking tasks a bit easier, and is meant to work in node as well as the browser.
 
 **[LIVE DEMO](http://s.codepen.io/icodeforlove/debug/ZOjBBB)**
 
