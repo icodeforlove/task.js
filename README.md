@@ -7,8 +7,12 @@ This module is intended to make working with blocking tasks a bit easier, and is
 
 ```
 # node
-npm install task.js // require('task.js');
+npm install task.js
+
+# usage
+import Task from 'task.js';
 ```
+
 
 or
 
