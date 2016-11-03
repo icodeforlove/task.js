@@ -7,7 +7,7 @@ This module is intended to make working with blocking tasks a bit easier, and is
 
 ```
 # node
-npm install task.js
+npm install task.js // require('task.js');
 ```
 
 or
@@ -17,7 +17,7 @@ or
 bower install task
 ```
 
-or just grab the [cdnjs hosted version](https://cdnjs.cloudflare.com/ajax/libs/task.js/0.0.18/task.min.js) directly
+or just grab the [cdnjs hosted version](https://cdnjs.com/libraries/task.js) directly
 
 ## important
 
