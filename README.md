@@ -91,7 +91,7 @@ powTask(2).then(function (squaredNumber) {
 });
 ```
 
-But keep in mind that your function cannot reference anything inside of your current scope because it is running inside of a worker.
+NB Your function is converted to a string and executed in another context.  Your function cannot reference anything inside of your current scope because it is running inside of a worker (e.g. don't try to access global variables).
 
 ## task.decorate
 
