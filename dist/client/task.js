@@ -1,4 +1,4 @@
-/*! task.js - 0.0.21 - clientside */
+/*! task.js - 0.0.22 - clientside */
 var task =
 /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
