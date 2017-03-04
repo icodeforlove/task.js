@@ -1,5 +1,5 @@
-# task.js [![Build Status](https://img.shields.io/travis/icodeforlove/task.js.svg?branch=master)](https://travis-ci.org/icodeforlove/task.js) [![Code Climate](https://img.shields.io/codeclimate/github/icodeforlove/task.js.svg)](https://codeclimate.com/github/icodeforlove/task.js)
-This modules is intended to make working with blocking tasks a bit easier, and is meant to work in node as well as the browser.
+# task.js [![Build Status](https://img.shields.io/travis/icodeforlove/task.js.svg?branch=master)](https://travis-ci.org/icodeforlove/task.js) [![Code Climate](https://img.shields.io/codeclimate/github/icodeforlove/task.js.svg)](https://codeclimate.com/github/icodeforlove/task.js) [![CDNJS](https://img.shields.io/cdnjs/v/task.js.svg)](https://cdnjs.com/libraries/task.js)
+This module is intended to make working with blocking tasks a bit easier, and is meant to work in node as well as the browser.
 
 **[LIVE DEMO](http://s.codepen.io/icodeforlove/debug/ZOjBBB)**
 
@@ -8,7 +8,11 @@ This modules is intended to make working with blocking tasks a bit easier, and i
 ```
 # node
 npm install task.js
+
+# usage
+import Task from 'task.js';
 ```
+
 
 or
 
@@ -17,7 +21,7 @@ or
 bower install task
 ```
 
-or just grab the [cdnjs hosted version](https://cdnjs.cloudflare.com/ajax/libs/task.js/0.0.18/task.min.js) directly
+or just grab the [cdnjs hosted version](https://cdnjs.com/libraries/task.js) directly
 
 ## important
 
@@ -107,16 +111,21 @@ class MathTask () {
 Below is an example of using a transferable
 
 ```javascript
-var buffer = new ArrayBuffer();
+// create buffer backed array
+var array = new Float32Array([1,3,3,7]);
 
 task.run({
-	arguments: [buffer, 1234],
-	transferables: [buffer] // optional, and only supported client-side
-	function: function (message) {
-		return message.buffer;
-	}
+    arguments: [array.buffer],
+    transferables: [array.buffer], // optional, and only supported client-side
+    // if the browser supports transferables `array` will get zeroed out because 
+    // we flagged the buffer arg as transferable.
+    function: function (buffer) {
+    	// do intensive operations on your buffer
+        return buffer;
+    }
 }).then(function (buffer) {
-	console.log(buffer); // 4
+    // convert buffer back into original type
+    console.log(new Float32Array(buffer)); // [1,3,3,7]
 });
 ```
 
