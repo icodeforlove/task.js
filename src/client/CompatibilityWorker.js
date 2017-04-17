@@ -7,12 +7,6 @@ class CompatibilityWorker extends GeneralWorker {
 		this._setTimeoutID = null;
 	}
 
-	_log (message) {
-		if (this._debug) {
-			this._logger(`task.js:worker[mid(${this.managerId}) wid(${this.id})]: ${message}`);
-		}
-	}
-
 	postMessage = (message, options) => {
 		// toss it out of the event loop
 		this._setTimeoutID = setTimeout(() => {
