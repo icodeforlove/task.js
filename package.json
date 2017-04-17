@@ -1,6 +1,6 @@
 {
   "name": "task.js",
-  "version": "0.0.22",
+  "version": "0.0.23",
   "description": "Simplified interface for getting code to run on different cores (node.js, and web)",
   "main": "index.js",
   "scripts": {

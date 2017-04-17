@@ -57,6 +57,12 @@ var GeneralWorker = function () {
 		this._onExit = $config.onExit;
 	}
 
+	GeneralWorker.prototype._log = function _log(message) {
+		if (this._debug) {
+			this._logger('task.js:worker[mid(' + this.managerId + ') wid(' + this.id + ')]: ' + message);
+		}
+	};
+
 	GeneralWorker.prototype.run = function run($options) {
 		this.lastTaskTimestamp = new Date();
 

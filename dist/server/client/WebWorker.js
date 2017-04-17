@@ -50,12 +50,6 @@ var WebWorker = function (_GeneralWorker) {
 		return _this;
 	}
 
-	WebWorker.prototype._log = function _log(message) {
-		if (this._debug) {
-			this._logger('task.js:worker[mid(' + this.managerId + ') wid(' + this.id + ')]: ' + message);
-		}
-	};
-
 	return WebWorker;
 }(_GeneralWorker3.default);
 

@@ -467,12 +467,6 @@ var task =
 			return _this;
 		}
 
-		WebWorker.prototype._log = function _log(message) {
-			if (this._debug) {
-				this._logger('task.js:worker[mid(' + this.managerId + ') wid(' + this.id + ')]: ' + message);
-			}
-		};
-
 		return WebWorker;
 	}(_GeneralWorker3.default);
 
@@ -540,6 +534,12 @@ var task =
 			this._onTaskComplete = $config.onTaskComplete;
 			this._onExit = $config.onExit;
 		}
+
+		GeneralWorker.prototype._log = function _log(message) {
+			if (this._debug) {
+				this._logger('task.js:worker[mid(' + this.managerId + ') wid(' + this.id + ')]: ' + message);
+			}
+		};
 
 		GeneralWorker.prototype.run = function run($options) {
 			this.lastTaskTimestamp = new Date();
@@ -647,12 +647,6 @@ var task =
 			_this._setTimeoutID = null;
 			return _this;
 		}
-
-		CompatibilityWorker.prototype._log = function _log(message) {
-			if (this._debug) {
-				this._logger('task.js:worker[mid(' + this.managerId + ') wid(' + this.id + ')]: ' + message);
-			}
-		};
 
 		return CompatibilityWorker;
 	}(_GeneralWorker3.default);
