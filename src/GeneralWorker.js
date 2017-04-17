@@ -12,6 +12,12 @@ class GeneralWorker {
 		this._onExit = $config.onExit;
 	}
 
+	_log (message) {
+		if (this._debug) {
+			this._logger(`task.js:worker[mid(${this.managerId}) wid(${this.id})]: ${message}`);
+		}
+	}
+
 	handleWorkerExit = () => {
 		this._log('killed');
 		this._onExit(this);

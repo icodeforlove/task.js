@@ -11,12 +11,6 @@ class WebWorker extends GeneralWorker {
 		this._log(`initialized`);
 	}
 
-	_log (message) {
-		if (this._debug) {
-			this._logger(`task.js:worker[mid(${this.managerId}) wid(${this.id})]: ${message}`);
-		}
-	}
-
 	WORKER_SOURCE = `function () {
 		onmessage = function (event) {
 			var message = event.data;
