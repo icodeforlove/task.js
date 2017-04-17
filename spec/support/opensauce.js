@@ -29,7 +29,7 @@ module.exports = function(config) {
 		// Mac 10.9 Browsers
 		{platform: 'Mac 10.9', browserName: 'chrome', version: 'latest'},
 		{platform: 'Mac 10.9', browserName: 'firefox', version: 'latest'},
-		{platform: 'Mac 10.9', browserName: 'safari', version: 'latest'},
+		//{platform: 'Mac 10.9', browserName: 'safari', version: 'latest'},
 
 		// Android 5.1
 		{platformName: 'Android', deviceName: 'Android Emulator', platformVersion: '5.1', browserName: 'Browser'},
