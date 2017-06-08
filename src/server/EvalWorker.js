@@ -10,7 +10,17 @@ process.on('message', (message) => {
 	});
 
 	try {
-		process.send({id: message.id, result: eval('(' + message.func + ')').apply(null, args)});
+		var result = eval('(' + message.func + ')').apply(null, args);
+
+		if (typeof Promise != 'undefined' && result instanceof Promise) {
+			result.then(function (result) {
+				process.send({id: message.id, result: result});
+			}).catch(function (error) {
+				process.send({id: message.id, error: error.message});
+			});
+		} else {
+			process.send({id: message.id, result: result});
+		}
 	} catch (error) {
 		process.send({id: message.id, error: error.message});
 	}

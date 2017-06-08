@@ -27,6 +27,28 @@ module.exports = function (task, Promise, CompatibilityWorker) {
 			});
 		});
 
+		if (typeof Promise != 'undefined') {
+			it('can run a single async task', function(done) {
+				task.run({
+					arguments: [2],
+					function: function (number) {
+						if (typeof Promise !== 'undefined') {
+							return new Promise(function (resolve, reject) {
+								setTimeout(function () {
+									resolve(Math.pow(number, 2));
+								}, 10);
+							});
+						} else {
+							return Math.pow(number, 2);
+						}
+					}
+				}).then(function (squaredNumber) {
+					expect(squaredNumber).toBe(4);
+					done();
+				});
+			});
+		}
+
 		it('can run a single task using a callback', function(done) {
 			task.run({
 				arguments: [2],

@@ -24,7 +24,17 @@ class WebWorker extends GeneralWorker {
 			});
 
 			try {
-				postMessage({id: message.id, result: eval('(' + message.func + ')').apply(null, args)});
+				var result = eval('(' + message.func + ')').apply(null, args);
+
+				if (typeof Promise != 'undefined' && result instanceof Promise) {
+					result.then(function (result) {
+						postMessage({id: message.id, result: result});
+					}).catch(function (error) {
+						postMessage({id: message.id, error: error.message});
+					});
+				} else {
+					postMessage({id: message.id, result: result});
+				}
 			} catch (error) {
 				postMessage({id: message.id, error: error.message});
 			}
