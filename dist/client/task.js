@@ -1,4 +1,4 @@
-/*! task.js - 0.0.26 - clientside */
+/*! task.js - 0.0.27 - clientside */
 var task =
 /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
@@ -338,6 +338,8 @@ var task =
 
 			var idleWorkers = this._workers.filter(function (worker) {
 				return worker.tasks.length <= _this2._workerTaskConcurrency;
+			}).sort(function (a, b) {
+				return a.tasks.length - b.tasks.length;
 			});
 
 			if (idleWorkers.length) {

@@ -196,7 +196,9 @@ class WorkerManager {
 	}
 
 	_getWorker () {
-		let idleWorkers = this._workers.filter(worker => worker.tasks.length <= this._workerTaskConcurrency);
+		let idleWorkers = this._workers
+			.filter(worker => worker.tasks.length <= this._workerTaskConcurrency)
+			.sort((a, b) => a.tasks.length - b.tasks.length);
 
 		if (idleWorkers.length) {
 			return idleWorkers[0];

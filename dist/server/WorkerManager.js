@@ -209,6 +209,8 @@ var WorkerManager = function () {
 
 		var idleWorkers = this._workers.filter(function (worker) {
 			return worker.tasks.length <= _this2._workerTaskConcurrency;
+		}).sort(function (a, b) {
+			return a.tasks.length - b.tasks.length;
 		});
 
 		if (idleWorkers.length) {
