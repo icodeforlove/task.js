@@ -66,6 +66,7 @@ var myCustomTask = task.defaults({
 	logger: console.log, // (default: console.log, this is useful if you want to parse all log messages)
 	warmStart: false, // (default: false, if set to true all workers will be initialized instantly)
 	maxWorkers: 4, // (default: the system max, or 4 if it can't be resolved)
+	workerTaskConcurrency: 1, // (default: 1, this is only useful if you are only using async tasks/work)
 	idleTimeout: 10000, // (default: false)
 	idleCheckInterval: 1000 // (default: null)
 	globals: {}, // refer to globals information

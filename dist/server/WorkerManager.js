@@ -1,6 +1,6 @@
 'use strict';
 
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -58,6 +58,7 @@ var WorkerManager = function () {
 		this._WorkerProxy = WorkerProxy;
 		this._logger = $config.logger || console.log;
 
+		this._workerTaskConcurrency = ($config.workerTaskConcurrency || 1) - 1;
 		this._maxWorkers = $config.maxWorkers || 4;
 		this._idleTimeout = $config.idleTimeout === false ? false : $config.idleTimeout;
 		this._idleCheckInterval = $config.idleCheckInterval || 1000;
@@ -204,8 +205,10 @@ var WorkerManager = function () {
 	};
 
 	WorkerManager.prototype._getWorker = function _getWorker() {
+		var _this2 = this;
+
 		var idleWorkers = this._workers.filter(function (worker) {
-			return worker.tasks.length === 0;
+			return worker.tasks.length <= _this2._workerTaskConcurrency;
 		});
 
 		if (idleWorkers.length) {

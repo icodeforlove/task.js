@@ -1,4 +1,4 @@
-/*! task.js - 0.0.24 - clientside */
+/*! task.js - 0.0.25 - clientside */
 var task =
 /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
@@ -44,7 +44,7 @@ var task =
 /************************************************************************/
 /******/ ([
 /* 0 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
@@ -74,9 +74,9 @@ var task =
 	// allow custom settings (task.js factory)
 	module.exports.defaults = (0, _generateTaskFactoryMethod2.default)(defaults, WorkerProxy, _WorkerManager2.default);
 
-/***/ },
+/***/ }),
 /* 1 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
@@ -98,9 +98,9 @@ var task =
 		return false;
 	};
 
-/***/ },
+/***/ }),
 /* 2 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	'use strict';
 
@@ -123,13 +123,13 @@ var task =
 		return (window.URL || window.webkitURL).createObjectURL(blob);
 	};
 
-/***/ },
+/***/ }),
 /* 3 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	'use strict';
 
-	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -187,6 +187,7 @@ var task =
 			this._WorkerProxy = WorkerProxy;
 			this._logger = $config.logger || console.log;
 
+			this._workerTaskConcurrency = ($config.workerTaskConcurrency || 1) - 1;
 			this._maxWorkers = $config.maxWorkers || 4;
 			this._idleTimeout = $config.idleTimeout === false ? false : $config.idleTimeout;
 			this._idleCheckInterval = $config.idleCheckInterval || 1000;
@@ -333,8 +334,10 @@ var task =
 		};
 
 		WorkerManager.prototype._getWorker = function _getWorker() {
+			var _this2 = this;
+
 			var idleWorkers = this._workers.filter(function (worker) {
-				return worker.tasks.length === 0;
+				return worker.tasks.length <= _this2._workerTaskConcurrency;
 			});
 
 			if (idleWorkers.length) {
@@ -387,9 +390,9 @@ var task =
 
 	module.exports = WorkerManager;
 
-/***/ },
+/***/ }),
 /* 4 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	"use strict";
 
@@ -411,9 +414,9 @@ var task =
 		};
 	};
 
-/***/ },
+/***/ }),
 /* 5 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
@@ -472,9 +475,9 @@ var task =
 
 	module.exports = WebWorker;
 
-/***/ },
+/***/ }),
 /* 6 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	'use strict';
 
@@ -583,9 +586,9 @@ var task =
 
 	module.exports = GeneralWorker;
 
-/***/ },
+/***/ }),
 /* 7 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
@@ -653,5 +656,5 @@ var task =
 
 	module.exports = CompatibilityWorker;
 
-/***/ }
+/***/ })
 /******/ ]);

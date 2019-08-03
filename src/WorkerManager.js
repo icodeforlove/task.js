@@ -7,6 +7,7 @@ class WorkerManager {
 		this._WorkerProxy = WorkerProxy;
 		this._logger = $config.logger || console.log;
 
+		this._workerTaskConcurrency = ($config.workerTaskConcurrency || 1) - 1;
 		this._maxWorkers = $config.maxWorkers || 4;
 		this._idleTimeout = $config.idleTimeout === false ? false : $config.idleTimeout;
 		this._idleCheckInterval = $config.idleCheckInterval || 1000;
@@ -195,7 +196,7 @@ class WorkerManager {
 	}
 
 	_getWorker () {
-		let idleWorkers = this._workers.filter(worker => worker.tasks.length === 0);
+		let idleWorkers = this._workers.filter(worker => worker.tasks.length <= this._workerTaskConcurrency);
 
 		if (idleWorkers.length) {
 			return idleWorkers[0];
