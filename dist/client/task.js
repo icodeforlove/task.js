@@ -1,4 +1,4 @@
-/*! task.js - 0.0.28 - clientside */
+/*! task.js - 0.0.29 - clientside */
 var task =
 /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
@@ -149,7 +149,9 @@ var task =
 					_this._reissueTasksInTimedoutWorkers();
 				}
 
-				if (!_this._queue.length) return;
+				if (!_this._queue.length) {
+					return;
+				}
 
 				var worker = _this._getWorker();
 
@@ -208,6 +210,7 @@ var task =
 			this._onWorkerTaskComplete = this._onWorkerTaskComplete.bind(this);
 			this._flushIdleWorkers = this._flushIdleWorkers.bind(this);
 			this._totalWorkersCreated = 0;
+			this._lastTaskTimeoutCheck = new Date();
 
 			if (this._warmStart) {
 				this._log('warm starting workers');
@@ -328,6 +331,12 @@ var task =
 
 		WorkerManager.prototype._reissueTasksInTimedoutWorkers = function _reissueTasksInTimedoutWorkers() {
 			var _this2 = this;
+
+			if (new Date() - this._lastTaskTimeoutCheck < 5000) {
+				return;
+			}
+
+			this._lastTaskTimeoutCheck = new Date();
 
 			this._workers.forEach(function (worker) {
 				worker.tasks.some(function (task) {

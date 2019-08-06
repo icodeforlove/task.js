@@ -24,6 +24,7 @@ class WorkerManager {
 		this._onWorkerTaskComplete = this._onWorkerTaskComplete.bind(this);
 		this._flushIdleWorkers = this._flushIdleWorkers.bind(this);
 		this._totalWorkersCreated = 0;
+		this._lastTaskTimeoutCheck = new Date();
 
 		if (this._warmStart) {
 			this._log(`warm starting workers`);
@@ -151,6 +152,12 @@ class WorkerManager {
 	}
 
 	_reissueTasksInTimedoutWorkers () {
+		if (new Date () - this._lastTaskTimeoutCheck < 5000) {
+			return;
+		}
+
+		this._lastTaskTimeoutCheck = new Date();
+
 		this._workers.forEach(worker => {
 			worker.tasks.some(task => {
 				if (new Date() - task.startTime >= this._taskTimeout) {
@@ -166,7 +173,9 @@ class WorkerManager {
 			this._reissueTasksInTimedoutWorkers();
 		}
 
-		if (!this._queue.length) return;
+		if (!this._queue.length) {
+			return;
+		}
 
 		let worker = this._getWorker();
 
