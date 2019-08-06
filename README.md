@@ -1,4 +1,4 @@
-# task.js [![Build Status](https://img.shields.io/travis/icodeforlove/task.js.svg?branch=master)](https://travis-ci.org/icodeforlove/task.js) [![Code Climate](https://img.shields.io/codeclimate/github/icodeforlove/task.js.svg)](https://codeclimate.com/github/icodeforlove/task.js) [![CDNJS](https://img.shields.io/cdnjs/v/task.js.svg)](https://cdnjs.com/libraries/task.js)
+# task.js [![Build Status](https://img.shields.io/travis/icodeforlove/task.js.svg?branch=master)](https://travis-ci.org/icodeforlove/task.js) [![Code Climate](https://api.codeclimate.com/v1/badges/31e1fc75ec7591e84fb4/maintainability)](https://codeclimate.com/github/icodeforlove/task.js) [![CDNJS](https://img.shields.io/cdnjs/v/task.js.svg)](https://cdnjs.com/libraries/task.js)
 This module is intended to make working with blocking tasks a bit easier, and is meant to work in node as well as the browser.
 
 **[LIVE DEMO](https://codepen.io/icodeforlove/full/ZOjBBB)**
