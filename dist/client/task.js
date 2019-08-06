@@ -1,4 +1,4 @@
-/*! task.js - 0.0.27 - clientside */
+/*! task.js - 0.0.28 - clientside */
 var task =
 /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
@@ -145,6 +145,10 @@ var task =
 			};
 
 			this._next = function () {
+				if (_this._taskTimeout) {
+					_this._reissueTasksInTimedoutWorkers();
+				}
+
 				if (!_this._queue.length) return;
 
 				var worker = _this._getWorker();
@@ -190,6 +194,7 @@ var task =
 			this._workerTaskConcurrency = ($config.workerTaskConcurrency || 1) - 1;
 			this._maxWorkers = $config.maxWorkers || 4;
 			this._idleTimeout = $config.idleTimeout === false ? false : $config.idleTimeout;
+			this._taskTimeout = $config.taskTimeout || 0;
 			this._idleCheckInterval = $config.idleCheckInterval || 1000;
 			this._warmStart = $config.warmStart || false;
 			this._globals = $config.globals;
@@ -321,6 +326,19 @@ var task =
 			this._workers = [];
 		};
 
+		WorkerManager.prototype._reissueTasksInTimedoutWorkers = function _reissueTasksInTimedoutWorkers() {
+			var _this2 = this;
+
+			this._workers.forEach(function (worker) {
+				worker.tasks.some(function (task) {
+					if (new Date() - task.startTime >= _this2._taskTimeout) {
+						worker.forceExit();
+						return true;
+					}
+				});
+			});
+		};
+
 		WorkerManager.prototype._flushIdleWorkers = function _flushIdleWorkers() {
 			this._log('flushing idle workers');
 			this._workers = this._workers.filter(function (worker) {
@@ -334,10 +352,10 @@ var task =
 		};
 
 		WorkerManager.prototype._getWorker = function _getWorker() {
-			var _this2 = this;
+			var _this3 = this;
 
 			var idleWorkers = this._workers.filter(function (worker) {
-				return worker.tasks.length <= _this2._workerTaskConcurrency;
+				return worker.tasks.length <= _this3._workerTaskConcurrency;
 			}).sort(function (a, b) {
 				return a.tasks.length - b.tasks.length;
 			});
@@ -493,7 +511,12 @@ var task =
 
 			this.handleWorkerExit = function () {
 				_this._log('killed');
-				_this._onExit(_this);
+				_this._onExitHandler(_this);
+			};
+
+			this.forceExit = function () {
+				_this._onExit();
+				_this._worker.kill();
 			};
 
 			this.handleWorkerMessage = function (message) {
@@ -537,7 +560,7 @@ var task =
 			this.lastTaskTimestamp = null;
 
 			this._onTaskComplete = $config.onTaskComplete;
-			this._onExit = $config.onExit;
+			this._onExitHandler = $config.onExit;
 		}
 
 		GeneralWorker.prototype._log = function _log(message) {
@@ -551,6 +574,7 @@ var task =
 
 			var task = {
 				id: $options.id,
+				startTime: new Date(),
 				resolve: $options.resolve,
 				reject: $options.reject,
 				callback: $options.callback,

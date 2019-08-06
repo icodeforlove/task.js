@@ -10,6 +10,7 @@ class WorkerManager {
 		this._workerTaskConcurrency = ($config.workerTaskConcurrency || 1) - 1;
 		this._maxWorkers = $config.maxWorkers || 4;
 		this._idleTimeout = $config.idleTimeout === false ? false : $config.idleTimeout;
+		this._taskTimeout = $config.taskTimeout || 0;
 		this._idleCheckInterval = $config.idleCheckInterval || 1000;
 		this._warmStart = $config.warmStart || false;
 		this._globals = $config.globals;
@@ -149,7 +150,22 @@ class WorkerManager {
 		this._workers = [];
 	}
 
+	_reissueTasksInTimedoutWorkers () {
+		this._workers.forEach(worker => {
+			worker.tasks.some(task => {
+				if (new Date() - task.startTime >= this._taskTimeout) {
+					worker.forceExit();
+					return true;
+				}
+			});
+		});
+	}
+
 	_next = () => {
+		if (this._taskTimeout) {
+			this._reissueTasksInTimedoutWorkers();
+		}
+
 		if (!this._queue.length) return;
 
 		let worker = this._getWorker();

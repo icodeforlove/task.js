@@ -1,10 +1,11 @@
 {
   "name": "task.js",
-  "version": "0.0.27",
+  "version": "0.0.28",
   "description": "Simplified interface for getting code to run on different cores (node.js, and web)",
   "main": "index.js",
   "scripts": {
-    "test": "./node_modules/.bin/jasmine ./spec/server/index.js; ./node_modules/.bin/karma start ./spec/support/opensauce.js --single-run",
+    "test": "./node_modules/.bin/jasmine ./spec/server/index.js;",
+    "test-clientside": "./node_modules/.bin/karma start ./spec/support/opensauce.js --single-run",
     "test-local": "./node_modules/.bin/jasmine ./spec/server/index.js; ./node_modules/.bin/karma start ./spec/support/karma.js --single-run",
     "build": "rm ./dist; ./node_modules/.bin/webpack; ./node_modules/.bin/babel src -d dist/server"
   },

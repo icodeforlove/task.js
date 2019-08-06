@@ -16,6 +16,10 @@ var WorkerManager = function () {
 		};
 
 		this._next = function () {
+			if (_this._taskTimeout) {
+				_this._reissueTasksInTimedoutWorkers();
+			}
+
 			if (!_this._queue.length) return;
 
 			var worker = _this._getWorker();
@@ -61,6 +65,7 @@ var WorkerManager = function () {
 		this._workerTaskConcurrency = ($config.workerTaskConcurrency || 1) - 1;
 		this._maxWorkers = $config.maxWorkers || 4;
 		this._idleTimeout = $config.idleTimeout === false ? false : $config.idleTimeout;
+		this._taskTimeout = $config.taskTimeout || 0;
 		this._idleCheckInterval = $config.idleCheckInterval || 1000;
 		this._warmStart = $config.warmStart || false;
 		this._globals = $config.globals;
@@ -192,6 +197,19 @@ var WorkerManager = function () {
 		this._workers = [];
 	};
 
+	WorkerManager.prototype._reissueTasksInTimedoutWorkers = function _reissueTasksInTimedoutWorkers() {
+		var _this2 = this;
+
+		this._workers.forEach(function (worker) {
+			worker.tasks.some(function (task) {
+				if (new Date() - task.startTime >= _this2._taskTimeout) {
+					worker.forceExit();
+					return true;
+				}
+			});
+		});
+	};
+
 	WorkerManager.prototype._flushIdleWorkers = function _flushIdleWorkers() {
 		this._log('flushing idle workers');
 		this._workers = this._workers.filter(function (worker) {
@@ -205,10 +223,10 @@ var WorkerManager = function () {
 	};
 
 	WorkerManager.prototype._getWorker = function _getWorker() {
-		var _this2 = this;
+		var _this3 = this;
 
 		var idleWorkers = this._workers.filter(function (worker) {
-			return worker.tasks.length <= _this2._workerTaskConcurrency;
+			return worker.tasks.length <= _this3._workerTaskConcurrency;
 		}).sort(function (a, b) {
 			return a.tasks.length - b.tasks.length;
 		});

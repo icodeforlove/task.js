@@ -10,7 +10,12 @@ var GeneralWorker = function () {
 
 		this.handleWorkerExit = function () {
 			_this._log('killed');
-			_this._onExit(_this);
+			_this._onExitHandler(_this);
+		};
+
+		this.forceExit = function () {
+			_this._onExit();
+			_this._worker.kill();
 		};
 
 		this.handleWorkerMessage = function (message) {
@@ -54,7 +59,7 @@ var GeneralWorker = function () {
 		this.lastTaskTimestamp = null;
 
 		this._onTaskComplete = $config.onTaskComplete;
-		this._onExit = $config.onExit;
+		this._onExitHandler = $config.onExit;
 	}
 
 	GeneralWorker.prototype._log = function _log(message) {
@@ -68,6 +73,7 @@ var GeneralWorker = function () {
 
 		var task = {
 			id: $options.id,
+			startTime: new Date(),
 			resolve: $options.resolve,
 			reject: $options.reject,
 			callback: $options.callback,

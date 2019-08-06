@@ -9,7 +9,7 @@ class GeneralWorker {
 		this.lastTaskTimestamp = null;
 
 		this._onTaskComplete = $config.onTaskComplete;
-		this._onExit = $config.onExit;
+		this._onExitHandler = $config.onExit;
 	}
 
 	_log (message) {
@@ -20,7 +20,12 @@ class GeneralWorker {
 
 	handleWorkerExit = () => {
 		this._log('killed');
-		this._onExit(this);
+		this._onExitHandler(this);
+	}
+
+	forceExit = () => {
+		this._onExit();
+		this._worker.kill();
 	}
 
 	handleWorkerMessage = (message) => {
@@ -60,6 +65,7 @@ class GeneralWorker {
 
 		let task = {
 			id: $options.id,
+			startTime: new Date(),
 			resolve: $options.resolve,
 			reject: $options.reject,
 			callback: $options.callback,
