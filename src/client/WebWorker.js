@@ -30,13 +30,13 @@ class WebWorker extends GeneralWorker {
 					result.then(function (result) {
 						postMessage({id: message.id, result: result});
 					}).catch(function (error) {
-						postMessage({id: message.id, error: error.message});
+						postMessage({id: message.id, error: error.stack});
 					});
 				} else {
 					postMessage({id: message.id, result: result});
 				}
 			} catch (error) {
-				postMessage({id: message.id, error: error.message});
+				postMessage({id: message.id, error: error.stack});
 			}
 		}
 	}`;

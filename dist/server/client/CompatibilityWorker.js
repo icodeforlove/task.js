@@ -45,7 +45,7 @@ var CompatibilityWorker = function (_GeneralWorker) {
 					var result = func.apply(undefined, _toConsumableArray(args));
 					_this.handleWorkerMessage({ id: message.id, result: result });
 				} catch (error) {
-					_this.handleWorkerMessage({ id: message.id, 'error': error.message });
+					_this.handleWorkerMessage({ id: message.id, 'error': error.stack });
 				}
 			}, 1);
 		};

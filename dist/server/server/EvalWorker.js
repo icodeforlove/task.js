@@ -18,12 +18,12 @@ process.on('message', function (message) {
 			result.then(function (result) {
 				process.send({ id: message.id, result: result });
 			}).catch(function (error) {
-				process.send({ id: message.id, error: error.message });
+				process.send({ id: message.id, error: error.stack });
 			});
 		} else {
 			process.send({ id: message.id, result: result });
 		}
 	} catch (error) {
-		process.send({ id: message.id, error: error.message });
+		process.send({ id: message.id, error: error.stack });
 	}
 });

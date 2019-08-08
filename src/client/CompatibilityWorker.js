@@ -28,7 +28,7 @@ class CompatibilityWorker extends GeneralWorker {
 				let result = func(...args);
 				this.handleWorkerMessage({id: message.id, result: result});
 			} catch (error) {
-				this.handleWorkerMessage({id: message.id, 'error': error.message});
+				this.handleWorkerMessage({id: message.id, 'error': error.stack});
 			}
 		}, 1);
 	}
