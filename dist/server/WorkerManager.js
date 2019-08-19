@@ -175,9 +175,21 @@ var WorkerManager = function () {
 	};
 
 	WorkerManager.prototype.wrap = function wrap(func) {
+		var _ref = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : { useTransferables: false },
+		    useTransferables = _ref.useTransferables;
+
 		return function () {
 			var args = Array.from(arguments),
-			    callback = null;
+			    callback = null,
+			    transferables = null;
+
+			if (useTransferables) {
+				transferables = args.slice(-1)[0];
+				if (!Array.isArray(transferables)) {
+					throw new Error('Task expects to be passed a transferables array as its last argument.');
+				}
+				args = args.slice(0, -1);
+			}
 
 			if (typeof args[args.length - 1] === 'function') {
 				// apparently splice is broken in ie8
@@ -187,6 +199,7 @@ var WorkerManager = function () {
 
 			return this.run({
 				arguments: args,
+				transferables: transferables,
 				function: func,
 				callback: callback
 			});

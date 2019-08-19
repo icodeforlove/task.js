@@ -78,7 +78,7 @@ var myCustomTask = task.defaults({
 
 behind the scenes it's spreading your dynamic work across your cores
 
-## task.wrap
+## task.wrap (method, {useTransferables: false})
 
 You can wrap a function if the method signatures match, and it doesn't rely on any external variables.
 
