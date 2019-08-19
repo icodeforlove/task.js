@@ -1,9 +1,5 @@
 'use strict';
 
-var _child_process = require('child_process');
-
-var _child_process2 = _interopRequireDefault(_child_process);
-
 var _GeneralWorker2 = require('../GeneralWorker');
 
 var _GeneralWorker3 = _interopRequireDefault(_GeneralWorker2);
@@ -28,7 +24,7 @@ var NodeWorker = function (_GeneralWorker) {
 
 		_this._log = function (message) {
 			if (_this._debug) {
-				_this._logger('task.js:worker[managerId(' + _this.managerId + ') workerId(' + _this.id + ') processId(' + _this._worker.pid + ')]: ' + message);
+				_this._logger('task.js:worker[managerId(' + _this.managerId + ') workerId(' + _this.id + ') threadId(' + _this._worker.threadId + ')]: ' + message);
 			}
 		};
 
@@ -45,22 +41,28 @@ var NodeWorker = function (_GeneralWorker) {
 		};
 
 		_this._onMessage = function (message) {
+			//console.log(message);
 			_this.handleWorkerMessage(message);
 		};
 
 		_this.postMessage = function (message) {
 			_this._log('sending taskId(' + message.id + ') to worker process');
-			_this._worker.send(message);
+			_this._worker.postMessage(message);
 		};
 
 		_this.terminate = function () {
 			_this._log('terminated');
-			_this._worker.kill();
+			_this._worker.terminate();
 		};
 
 		$config = $config || {};
 
-		_this._worker = _child_process2.default.fork(__dirname + '/EvalWorker.js');
+		var _require = require('worker_threads'),
+		    Worker = _require.Worker;
+
+		_this._worker = new Worker(__dirname + '/WorkerThreadWorker.js', {
+			// TODO: DATA SUPPORT
+		});
 		_this._worker.on('message', _this._onMessage);
 		_this._worker.on('exit', _this._onExit);
 		_this._worker.on('close', _this._onExit);

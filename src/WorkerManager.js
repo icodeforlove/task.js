@@ -1,10 +1,21 @@
 class WorkerManager {
-	constructor ($config, WorkerProxy) {
+	constructor ($config, WorkerProxies) {
 		$config = $config || {};
 
 		this.id = ++WorkerManager.managerCount;
 
-		this._WorkerProxy = WorkerProxy;
+		if ($config.workerType === 'worker_threads') {
+			try {
+				require('worker_threads');
+			} catch (error) {
+				console.error('Your current version, or configuration of Node.js does not support worker_threads.')
+				process.exit(1);
+			}
+			this._WorkerProxy = WorkerProxies.NodeWorkerThread;
+		} else {
+			this._WorkerProxy = WorkerProxies.DefaultWorkerProxy;
+		}
+
 		this._logger = $config.logger || console.log;
 
 		this._workerTaskConcurrency = ($config.workerTaskConcurrency || 1) - 1;
@@ -40,7 +51,7 @@ class WorkerManager {
 
 	_log (message) {
 		if (this._debug) {
-			this._logger(`task.js:manager[mid(${this.id})] ${message}`);
+			this._logger(`task.js:manager[managerId(${this.id})] ${message}`);
 		}
 	}
 
@@ -67,7 +78,7 @@ class WorkerManager {
 
 		task.id = ++WorkerManager.taskCount;
 
-		this._log(`added tid(${task.id}) to the queue`);
+		this._log(`added taskId(${task.id}) to the queue`);
 
 		if (!task.callback) {
 			return new Promise(function (resolve, reject) {
@@ -185,7 +196,7 @@ class WorkerManager {
 		}
 
 		let task = this._queue.shift();
-		this._log(`sending tid(${task.id}) to wid(${worker.id})`)
+		this._log(`sending taskId(${task.id}) to workerId(${worker.id})`)
 		worker.run(task);
 	}
 

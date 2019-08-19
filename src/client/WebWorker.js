@@ -47,7 +47,7 @@ class WebWorker extends GeneralWorker {
 	}
 
 	postMessage = (message, options) => {
-		this._log(`sending tid(${message.id}) to worker process`);
+		this._log(`sending taskId(${message.id}) to worker process`);
 		this._worker.postMessage(message, options);
 	}
 

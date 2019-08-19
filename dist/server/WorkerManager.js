@@ -5,7 +5,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var WorkerManager = function () {
-	function WorkerManager($config, WorkerProxy) {
+	function WorkerManager($config, WorkerProxies) {
 		var _this = this;
 
 		_classCallCheck(this, WorkerManager);
@@ -32,7 +32,7 @@ var WorkerManager = function () {
 			}
 
 			var task = _this._queue.shift();
-			_this._log('sending tid(' + task.id + ') to wid(' + worker.id + ')');
+			_this._log('sending taskId(' + task.id + ') to workerId(' + worker.id + ')');
 			worker.run(task);
 		};
 
@@ -61,7 +61,18 @@ var WorkerManager = function () {
 
 		this.id = ++WorkerManager.managerCount;
 
-		this._WorkerProxy = WorkerProxy;
+		if ($config.workerType === 'worker_threads') {
+			try {
+				require('worker_threads');
+			} catch (error) {
+				console.error('Your current version, or configuration of Node.js does not support worker_threads.');
+				process.exit(1);
+			}
+			this._WorkerProxy = WorkerProxies.NodeWorkerThread;
+		} else {
+			this._WorkerProxy = WorkerProxies.DefaultWorkerProxy;
+		}
+
 		this._logger = $config.logger || console.log;
 
 		this._workerTaskConcurrency = ($config.workerTaskConcurrency || 1) - 1;
@@ -94,7 +105,7 @@ var WorkerManager = function () {
 
 	WorkerManager.prototype._log = function _log(message) {
 		if (this._debug) {
-			this._logger('task.js:manager[mid(' + this.id + ')] ' + message);
+			this._logger('task.js:manager[managerId(' + this.id + ')] ' + message);
 		}
 	};
 
@@ -121,7 +132,7 @@ var WorkerManager = function () {
 
 		task.id = ++WorkerManager.taskCount;
 
-		this._log('added tid(' + task.id + ') to the queue');
+		this._log('added taskId(' + task.id + ') to the queue');
 
 		if (!task.callback) {
 			return new Promise(function (resolve, reject) {

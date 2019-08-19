@@ -31,14 +31,14 @@ var GeneralWorker = function () {
 			if (taskIndex !== null) {
 				var task = _this.tasks[taskIndex];
 				if (message.error) {
-					_this._log('tid(' + task.id + ') has thrown an error ' + message.error);
+					_this._log('taskId(' + task.id + ') has thrown an error ' + message.error);
 					if (task.callback) {
 						task.callback(new Error('task.js: ' + message.error));
 					} else {
 						task.reject(new Error('task.js: ' + message.error));
 					}
 				} else {
-					_this._log('tid(' + task.id + ') has completed');
+					_this._log('taskId(' + task.id + ') has completed');
 					if (task.callback) {
 						task.callback(null, message.result);
 					} else {
@@ -64,7 +64,7 @@ var GeneralWorker = function () {
 
 	GeneralWorker.prototype._log = function _log(message) {
 		if (this._debug) {
-			this._logger('task.js:worker[mid(' + this.managerId + ') wid(' + this.id + ')]: ' + message);
+			this._logger('task.js:worker[managerId(' + this.managerId + ') workerId(' + this.id + ')]: ' + message);
 		}
 	};
 

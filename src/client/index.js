@@ -9,7 +9,7 @@ const defaults = {
 var WorkerProxy = isModern() ? require('./WebWorker') : require('./CompatibilityWorker');
 
 // expose default instance directly
-module.exports = new WorkerManager(defaults, WorkerProxy);
+module.exports = new WorkerManager(defaults, {DefaultWorkerProxy: WorkerProxy});
 
 // allow custom settings (task.js factory)
-module.exports.defaults = generateTaskFactoryMethod(defaults, WorkerProxy, WorkerManager);
+module.exports.defaults = generateTaskFactoryMethod(defaults, {DefaultWorkerProxy: WorkerProxy}, WorkerManager);

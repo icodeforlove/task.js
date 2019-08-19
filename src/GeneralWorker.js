@@ -14,7 +14,7 @@ class GeneralWorker {
 
 	_log (message) {
 		if (this._debug) {
-			this._logger(`task.js:worker[mid(${this.managerId}) wid(${this.id})]: ${message}`);
+			this._logger(`task.js:worker[managerId(${this.managerId}) workerId(${this.id})]: ${message}`);
 		}
 	}
 
@@ -41,14 +41,14 @@ class GeneralWorker {
 		if (taskIndex !== null) {
 			var task = this.tasks[taskIndex];
 			if (message.error) {
-				this._log(`tid(${task.id}) has thrown an error ${message.error}`);
+				this._log(`taskId(${task.id}) has thrown an error ${message.error}`);
 				if (task.callback) {
 					task.callback(new Error(`task.js: ${message.error}`));
 				} else {
 					task.reject(new Error(`task.js: ${message.error}`));
 				}
 			} else {
-				this._log(`tid(${task.id}) has completed`);
+				this._log(`taskId(${task.id}) has completed`);
 				if (task.callback) {
 					task.callback(null, message.result);
 				} else {

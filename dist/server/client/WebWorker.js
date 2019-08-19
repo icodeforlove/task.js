@@ -34,7 +34,7 @@ var WebWorker = function (_GeneralWorker) {
 		};
 
 		_this.postMessage = function (message, options) {
-			_this._log('sending tid(' + message.id + ') to worker process');
+			_this._log('sending taskId(' + message.id + ') to worker process');
 			_this._worker.postMessage(message, options);
 		};
 

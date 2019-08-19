@@ -56,7 +56,7 @@ var task =
 
 	var _WorkerManager2 = _interopRequireDefault(_WorkerManager);
 
-	var _generateTaskFactoryMethod = __webpack_require__(4);
+	var _generateTaskFactoryMethod = __webpack_require__(5);
 
 	var _generateTaskFactoryMethod2 = _interopRequireDefault(_generateTaskFactoryMethod);
 
@@ -66,13 +66,13 @@ var task =
 		maxWorkers: navigator.hardwareConcurrency
 	};
 
-	var WorkerProxy = (0, _isModern2.default)() ? __webpack_require__(5) : __webpack_require__(7);
+	var WorkerProxy = (0, _isModern2.default)() ? __webpack_require__(6) : __webpack_require__(8);
 
 	// expose default instance directly
-	module.exports = new _WorkerManager2.default(defaults, WorkerProxy);
+	module.exports = new _WorkerManager2.default(defaults, { DefaultWorkerProxy: WorkerProxy });
 
 	// allow custom settings (task.js factory)
-	module.exports.defaults = (0, _generateTaskFactoryMethod2.default)(defaults, WorkerProxy, _WorkerManager2.default);
+	module.exports.defaults = (0, _generateTaskFactoryMethod2.default)(defaults, { DefaultWorkerProxy: WorkerProxy }, _WorkerManager2.default);
 
 /***/ }),
 /* 1 */
@@ -125,16 +125,16 @@ var task =
 
 /***/ }),
 /* 3 */
-/***/ (function(module, exports) {
+/***/ (function(module, exports, __webpack_require__) {
 
-	'use strict';
+	/* WEBPACK VAR INJECTION */(function(process) {'use strict';
 
 	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 	var WorkerManager = function () {
-		function WorkerManager($config, WorkerProxy) {
+		function WorkerManager($config, WorkerProxies) {
 			var _this = this;
 
 			_classCallCheck(this, WorkerManager);
@@ -161,7 +161,7 @@ var task =
 				}
 
 				var task = _this._queue.shift();
-				_this._log('sending tid(' + task.id + ') to wid(' + worker.id + ')');
+				_this._log('sending taskId(' + task.id + ') to workerId(' + worker.id + ')');
 				worker.run(task);
 			};
 
@@ -190,7 +190,18 @@ var task =
 
 			this.id = ++WorkerManager.managerCount;
 
-			this._WorkerProxy = WorkerProxy;
+			if ($config.workerType === 'worker_threads') {
+				try {
+					__webpack_require__(!(function webpackMissingModule() { var e = new Error("Cannot find module \"worker_threads\""); e.code = 'MODULE_NOT_FOUND'; throw e; }()));
+				} catch (error) {
+					console.error('Your current version, or configuration of Node.js does not support worker_threads.');
+					process.exit(1);
+				}
+				this._WorkerProxy = WorkerProxies.NodeWorkerThread;
+			} else {
+				this._WorkerProxy = WorkerProxies.DefaultWorkerProxy;
+			}
+
 			this._logger = $config.logger || console.log;
 
 			this._workerTaskConcurrency = ($config.workerTaskConcurrency || 1) - 1;
@@ -223,7 +234,7 @@ var task =
 
 		WorkerManager.prototype._log = function _log(message) {
 			if (this._debug) {
-				this._logger('task.js:manager[mid(' + this.id + ')] ' + message);
+				this._logger('task.js:manager[managerId(' + this.id + ')] ' + message);
 			}
 		};
 
@@ -250,7 +261,7 @@ var task =
 
 			task.id = ++WorkerManager.taskCount;
 
-			this._log('added tid(' + task.id + ') to the queue');
+			this._log('added taskId(' + task.id + ') to the queue');
 
 			if (!task.callback) {
 				return new Promise(function (resolve, reject) {
@@ -418,9 +429,200 @@ var task =
 
 
 	module.exports = WorkerManager;
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(4)))
 
 /***/ }),
 /* 4 */
+/***/ (function(module, exports) {
+
+	// shim for using process in browser
+	var process = module.exports = {};
+
+	// cached from whatever global is present so that test runners that stub it
+	// don't break things.  But we need to wrap it in a try catch in case it is
+	// wrapped in strict mode code which doesn't define any globals.  It's inside a
+	// function because try/catches deoptimize in certain engines.
+
+	var cachedSetTimeout;
+	var cachedClearTimeout;
+
+	function defaultSetTimout() {
+	    throw new Error('setTimeout has not been defined');
+	}
+	function defaultClearTimeout () {
+	    throw new Error('clearTimeout has not been defined');
+	}
+	(function () {
+	    try {
+	        if (typeof setTimeout === 'function') {
+	            cachedSetTimeout = setTimeout;
+	        } else {
+	            cachedSetTimeout = defaultSetTimout;
+	        }
+	    } catch (e) {
+	        cachedSetTimeout = defaultSetTimout;
+	    }
+	    try {
+	        if (typeof clearTimeout === 'function') {
+	            cachedClearTimeout = clearTimeout;
+	        } else {
+	            cachedClearTimeout = defaultClearTimeout;
+	        }
+	    } catch (e) {
+	        cachedClearTimeout = defaultClearTimeout;
+	    }
+	} ())
+	function runTimeout(fun) {
+	    if (cachedSetTimeout === setTimeout) {
+	        //normal enviroments in sane situations
+	        return setTimeout(fun, 0);
+	    }
+	    // if setTimeout wasn't available but was latter defined
+	    if ((cachedSetTimeout === defaultSetTimout || !cachedSetTimeout) && setTimeout) {
+	        cachedSetTimeout = setTimeout;
+	        return setTimeout(fun, 0);
+	    }
+	    try {
+	        // when when somebody has screwed with setTimeout but no I.E. maddness
+	        return cachedSetTimeout(fun, 0);
+	    } catch(e){
+	        try {
+	            // When we are in I.E. but the script has been evaled so I.E. doesn't trust the global object when called normally
+	            return cachedSetTimeout.call(null, fun, 0);
+	        } catch(e){
+	            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error
+	            return cachedSetTimeout.call(this, fun, 0);
+	        }
+	    }
+
+
+	}
+	function runClearTimeout(marker) {
+	    if (cachedClearTimeout === clearTimeout) {
+	        //normal enviroments in sane situations
+	        return clearTimeout(marker);
+	    }
+	    // if clearTimeout wasn't available but was latter defined
+	    if ((cachedClearTimeout === defaultClearTimeout || !cachedClearTimeout) && clearTimeout) {
+	        cachedClearTimeout = clearTimeout;
+	        return clearTimeout(marker);
+	    }
+	    try {
+	        // when when somebody has screwed with setTimeout but no I.E. maddness
+	        return cachedClearTimeout(marker);
+	    } catch (e){
+	        try {
+	            // When we are in I.E. but the script has been evaled so I.E. doesn't  trust the global object when called normally
+	            return cachedClearTimeout.call(null, marker);
+	        } catch (e){
+	            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error.
+	            // Some versions of I.E. have different rules for clearTimeout vs setTimeout
+	            return cachedClearTimeout.call(this, marker);
+	        }
+	    }
+
+
+
+	}
+	var queue = [];
+	var draining = false;
+	var currentQueue;
+	var queueIndex = -1;
+
+	function cleanUpNextTick() {
+	    if (!draining || !currentQueue) {
+	        return;
+	    }
+	    draining = false;
+	    if (currentQueue.length) {
+	        queue = currentQueue.concat(queue);
+	    } else {
+	        queueIndex = -1;
+	    }
+	    if (queue.length) {
+	        drainQueue();
+	    }
+	}
+
+	function drainQueue() {
+	    if (draining) {
+	        return;
+	    }
+	    var timeout = runTimeout(cleanUpNextTick);
+	    draining = true;
+
+	    var len = queue.length;
+	    while(len) {
+	        currentQueue = queue;
+	        queue = [];
+	        while (++queueIndex < len) {
+	            if (currentQueue) {
+	                currentQueue[queueIndex].run();
+	            }
+	        }
+	        queueIndex = -1;
+	        len = queue.length;
+	    }
+	    currentQueue = null;
+	    draining = false;
+	    runClearTimeout(timeout);
+	}
+
+	process.nextTick = function (fun) {
+	    var args = new Array(arguments.length - 1);
+	    if (arguments.length > 1) {
+	        for (var i = 1; i < arguments.length; i++) {
+	            args[i - 1] = arguments[i];
+	        }
+	    }
+	    queue.push(new Item(fun, args));
+	    if (queue.length === 1 && !draining) {
+	        runTimeout(drainQueue);
+	    }
+	};
+
+	// v8 likes predictible objects
+	function Item(fun, array) {
+	    this.fun = fun;
+	    this.array = array;
+	}
+	Item.prototype.run = function () {
+	    this.fun.apply(null, this.array);
+	};
+	process.title = 'browser';
+	process.browser = true;
+	process.env = {};
+	process.argv = [];
+	process.version = ''; // empty string to avoid regexp issues
+	process.versions = {};
+
+	function noop() {}
+
+	process.on = noop;
+	process.addListener = noop;
+	process.once = noop;
+	process.off = noop;
+	process.removeListener = noop;
+	process.removeAllListeners = noop;
+	process.emit = noop;
+	process.prependListener = noop;
+	process.prependOnceListener = noop;
+
+	process.listeners = function (name) { return [] }
+
+	process.binding = function (name) {
+	    throw new Error('process.binding is not supported');
+	};
+
+	process.cwd = function () { return '/' };
+	process.chdir = function (dir) {
+	    throw new Error('process.chdir is not supported');
+	};
+	process.umask = function() { return 0; };
+
+
+/***/ }),
+/* 5 */
 /***/ (function(module, exports) {
 
 	"use strict";
@@ -444,7 +646,7 @@ var task =
 	};
 
 /***/ }),
-/* 5 */
+/* 6 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -453,7 +655,7 @@ var task =
 
 	var _functionToObjectURL2 = _interopRequireDefault(_functionToObjectURL);
 
-	var _GeneralWorker2 = __webpack_require__(6);
+	var _GeneralWorker2 = __webpack_require__(7);
 
 	var _GeneralWorker3 = _interopRequireDefault(_GeneralWorker2);
 
@@ -483,7 +685,7 @@ var task =
 			};
 
 			_this.postMessage = function (message, options) {
-				_this._log('sending tid(' + message.id + ') to worker process');
+				_this._log('sending taskId(' + message.id + ') to worker process');
 				_this._worker.postMessage(message, options);
 			};
 
@@ -505,7 +707,7 @@ var task =
 	module.exports = WebWorker;
 
 /***/ }),
-/* 6 */
+/* 7 */
 /***/ (function(module, exports) {
 
 	'use strict';
@@ -541,14 +743,14 @@ var task =
 				if (taskIndex !== null) {
 					var task = _this.tasks[taskIndex];
 					if (message.error) {
-						_this._log('tid(' + task.id + ') has thrown an error ' + message.error);
+						_this._log('taskId(' + task.id + ') has thrown an error ' + message.error);
 						if (task.callback) {
 							task.callback(new Error('task.js: ' + message.error));
 						} else {
 							task.reject(new Error('task.js: ' + message.error));
 						}
 					} else {
-						_this._log('tid(' + task.id + ') has completed');
+						_this._log('taskId(' + task.id + ') has completed');
 						if (task.callback) {
 							task.callback(null, message.result);
 						} else {
@@ -574,7 +776,7 @@ var task =
 
 		GeneralWorker.prototype._log = function _log(message) {
 			if (this._debug) {
-				this._logger('task.js:worker[mid(' + this.managerId + ') wid(' + this.id + ')]: ' + message);
+				this._logger('task.js:worker[managerId(' + this.managerId + ') workerId(' + this.id + ')]: ' + message);
 			}
 		};
 
@@ -622,12 +824,12 @@ var task =
 	module.exports = GeneralWorker;
 
 /***/ }),
-/* 7 */
+/* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var _GeneralWorker2 = __webpack_require__(6);
+	var _GeneralWorker2 = __webpack_require__(7);
 
 	var _GeneralWorker3 = _interopRequireDefault(_GeneralWorker2);
 

@@ -1,4 +1,3 @@
-import cp from 'child_process';
 import GeneralWorker from '../GeneralWorker';
 
 class NodeWorker extends GeneralWorker {
@@ -7,7 +6,11 @@ class NodeWorker extends GeneralWorker {
 
 		$config = $config || {};
 
-		this._worker = cp.fork(`${__dirname}/EvalWorker.js`);
+		const { Worker } = require('worker_threads');
+
+		this._worker = new Worker(`${__dirname}/WorkerThreadWorker.js`, {
+			// TODO: DATA SUPPORT
+		});
 		this._worker.on('message', this._onMessage);
 		this._worker.on('exit', this._onExit);
 		this._worker.on('close', this._onExit);
@@ -20,7 +23,7 @@ class NodeWorker extends GeneralWorker {
 
 	_log = (message) => {
 		if (this._debug) {
-			this._logger(`task.js:worker[managerId(${this.managerId}) workerId(${this.id}) processId(${this._worker.pid})]: ${message}`);
+			this._logger(`task.js:worker[managerId(${this.managerId}) workerId(${this.id}) threadId(${this._worker.threadId})]: ${message}`);
 		}
 	}
 
@@ -37,17 +40,18 @@ class NodeWorker extends GeneralWorker {
 	}
 
 	_onMessage = (message) => {
+		//console.log(message);
 		this.handleWorkerMessage(message);
 	}
 
 	postMessage = (message) => {
 		this._log(`sending taskId(${message.id}) to worker process`);
-		this._worker.send(message);
+		this._worker.postMessage(message);
 	}
 
 	terminate = () => {
 		this._log(`terminated`);
-		this._worker.kill();
+		this._worker.terminate();
 	}
 }
 
