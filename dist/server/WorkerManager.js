@@ -10,11 +10,6 @@ var WorkerManager = function () {
 
 		_classCallCheck(this, WorkerManager);
 
-		this.decorate = function (target, key) {
-			target[key] = _this.wrap(target[key]);
-			return target;
-		};
-
 		this._next = function () {
 			if (_this._taskTimeout) {
 				_this._reissueTasksInTimedoutWorkers();
@@ -69,6 +64,8 @@ var WorkerManager = function () {
 				process.exit(1);
 			}
 			this._WorkerProxy = WorkerProxies.NodeWorkerThread;
+		} else if ($config.workerType == 'compatibility_worker') {
+			this._WorkerProxy = WorkerProxies.CompatibilityWorker;
 		} else {
 			this._WorkerProxy = WorkerProxies.DefaultWorkerProxy;
 		}
@@ -145,21 +142,6 @@ var WorkerManager = function () {
 			this._queue.push(task);
 			this._next();
 		}
-	};
-
-	WorkerManager.prototype.setGlobals = function setGlobals(globals) {
-		// terminate all existing workers
-		this._workers.forEach(function (worker) {
-			worker.terminate();
-		});
-
-		// flush worker pool
-		this._workers = [];
-
-		// replace globals
-		this._globals = globals;
-
-		this._next();
 	};
 
 	WorkerManager.prototype._runOnWorker = function _runOnWorker(worker, args, func) {

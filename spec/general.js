@@ -1,13 +1,16 @@
-module.exports = function (task, Promise, CompatibilityWorker) {
+module.exports = function (Task, Promise, {workerType} = {}) {
+	let task = new Task({});
+
 	return function() {
 		it('can use custom defaults', function() {
 			let defaults = {
 				maxWorkers: 3,
 				idleTimeout: 5000,
-				idleCheckInterval: 11000
+				idleCheckInterval: 11000,
+				workerType
 			};
 
-			let customTask = task.defaults(defaults);
+			let customTask = new Task(defaults);
 
 			expect(customTask._maxWorkers).toBe(defaults.maxWorkers);
 			expect(customTask._idleTimeout).toBe(defaults.idleTimeout);
@@ -86,8 +89,9 @@ module.exports = function (task, Promise, CompatibilityWorker) {
 
 
 		it('can run many tasks with one worker', function(done) {
-			let customTask = task.defaults({
-				maxWorkers: 1
+			let customTask = new Task({
+				maxWorkers: 1,
+				workerType
 			});
 
 			function squareAsync () {
@@ -111,11 +115,12 @@ module.exports = function (task, Promise, CompatibilityWorker) {
 			});
 		});
 
-		if (CompatibilityWorker) {
+		if (workerType === 'compatibility_worker') {
 			it('can run many tasks with a compatibility worker', function(done) {
-				let customTask = task.defaults({
-					maxWorkers: 1
-				}, CompatibilityWorker);
+				let customTask = new Task({
+					maxWorkers: 1,
+					workerType
+				});
 
 				function squareAsync () {
 					return customTask.run({
@@ -189,10 +194,11 @@ module.exports = function (task, Promise, CompatibilityWorker) {
 		});
 
 		it('can use globals', function (done) {
-			let customTask = task.defaults({
+			let customTask = new Task({
 				globals: {
 					data: 1
-				}
+				},
+				workerType
 			});
 
 			customTask.wrap(function () {
@@ -205,9 +211,10 @@ module.exports = function (task, Promise, CompatibilityWorker) {
 		});
 
 		it('can warmStart', function (done) {
-			let customTask = task.defaults({
+			let customTask = new Task({
 				warmStart: true,
-				maxWorkers: 2
+				maxWorkers: 2,
+				workerType
 			});
 
 			expect(customTask.getActiveWorkerCount()).toEqual(2);
@@ -217,12 +224,13 @@ module.exports = function (task, Promise, CompatibilityWorker) {
 		});
 
 		it('can warmStart with globals', function (done) {
-			let customTask = task.defaults({
+			let customTask = new Task({
 				globals: {
 					data: 1
 				},
 				warmStart: true,
-				maxWorkers: 2
+				maxWorkers: 2,
+				workerType
 			});
 
 			expect(customTask.getActiveWorkerCount()).toEqual(2);
@@ -232,14 +240,15 @@ module.exports = function (task, Promise, CompatibilityWorker) {
 		});
 
 		it('can use globals and initialize', function (done) {
-			let customTask = task.defaults({
+			let customTask = new Task({
 				globals: {
 					data: 1
 				},
 				initialize: function (globals) {
 					globals.data += 1;
 					return globals;
-				}
+				},
+				workerType
 			});
 
 			customTask.wrap(function () {
@@ -252,9 +261,10 @@ module.exports = function (task, Promise, CompatibilityWorker) {
 		});
 
 		it('can terminate', function(done) {
-			let customTask = task.defaults({
-				maxWorkers: 1
-			}, CompatibilityWorker);
+			let customTask = new Task({
+				maxWorkers: 1,
+				workerType
+			});
 
 			function pow(number) {
 				return Math.pow(number, 2);
@@ -271,33 +281,6 @@ module.exports = function (task, Promise, CompatibilityWorker) {
 				expect(customTask._workers.length).toEqual(1);
 				customTask.terminate();
 				expect(customTask._workers.length).toEqual(0);
-				done();
-			});
-		});
-
-		it('can use setGlobals', function () {
-			let customTask = task.defaults({
-				globals: {
-					test:1
-				}
-			});
-
-			customTask.setGlobals({
-				test: 2
-			});
-
-			customTask.setGlobals({
-				test: 3
-			});
-
-			customTask.setGlobals({
-				test: 4
-			});
-
-			customTask.wrap(function () {
-				return globals;
-			})().then(function (globals) {
-				expect(globals.test).toEqual(4);
 				done();
 			});
 		});

@@ -52,27 +52,61 @@ var task =
 
 	var _isModern2 = _interopRequireDefault(_isModern);
 
-	var _WorkerManager = __webpack_require__(3);
+	var _WorkerManager2 = __webpack_require__(3);
 
-	var _WorkerManager2 = _interopRequireDefault(_WorkerManager);
+	var _WorkerManager3 = _interopRequireDefault(_WorkerManager2);
 
 	var _generateTaskFactoryMethod = __webpack_require__(5);
 
 	var _generateTaskFactoryMethod2 = _interopRequireDefault(_generateTaskFactoryMethod);
 
+	var _CompatibilityWorker = __webpack_require__(6);
+
+	var _CompatibilityWorker2 = _interopRequireDefault(_CompatibilityWorker);
+
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	var defaults = {
-		maxWorkers: navigator.hardwareConcurrency
+	function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : _defaults(subClass, superClass); }
+
+	var WorkerProxies = {
+		CompatibilityWorker: _CompatibilityWorker2.default
 	};
 
-	var WorkerProxy = (0, _isModern2.default)() ? __webpack_require__(6) : __webpack_require__(8);
+	if ((0, _isModern2.default)()) {
+		WorkerProxies.DefaultWorkerProxy = __webpack_require__(8);
+	}
 
-	// expose default instance directly
-	module.exports = new _WorkerManager2.default(defaults, { DefaultWorkerProxy: WorkerProxy });
+	// const defaults = {
+	// 	maxWorkers: navigator.hardwareConcurrency
+	// };
 
-	// allow custom settings (task.js factory)
-	module.exports.defaults = (0, _generateTaskFactoryMethod2.default)(defaults, { DefaultWorkerProxy: WorkerProxy }, _WorkerManager2.default);
+	//var WebWorker = isModern() ? require('./WebWorker') : require('./CompatibilityWorker');
+	module.exports = function (_WorkerManager) {
+		_inherits(ServerWorkerManager, _WorkerManager);
+
+		function ServerWorkerManager($config) {
+			_classCallCheck(this, ServerWorkerManager);
+
+			return _possibleConstructorReturn(this, _WorkerManager.call(this, $config, WorkerProxies));
+		}
+
+		return ServerWorkerManager;
+	}(_WorkerManager3.default);
+	// module.exports = class ServerWorkerManager extends WorkerManager {
+	// 	WorkerProxies = WorkerProxies;
+	// };
+	// console.log(module.exports);
+	// // expose default instance directly
+	// module.exports = new WorkerManager(defaults, {DefaultWorkerProxy: WorkerProxy});
+
+	// // allow custom settings (task.js factory)
+	// module.exports.defaults = generateTaskFactoryMethod(defaults, {DefaultWorkerProxy: WorkerProxy}, WorkerManager);
 
 /***/ }),
 /* 1 */
@@ -139,11 +173,6 @@ var task =
 
 			_classCallCheck(this, WorkerManager);
 
-			this.decorate = function (target, key) {
-				target[key] = _this.wrap(target[key]);
-				return target;
-			};
-
 			this._next = function () {
 				if (_this._taskTimeout) {
 					_this._reissueTasksInTimedoutWorkers();
@@ -198,6 +227,8 @@ var task =
 					process.exit(1);
 				}
 				this._WorkerProxy = WorkerProxies.NodeWorkerThread;
+			} else if ($config.workerType == 'compatibility_worker') {
+				this._WorkerProxy = WorkerProxies.CompatibilityWorker;
 			} else {
 				this._WorkerProxy = WorkerProxies.DefaultWorkerProxy;
 			}
@@ -274,21 +305,6 @@ var task =
 				this._queue.push(task);
 				this._next();
 			}
-		};
-
-		WorkerManager.prototype.setGlobals = function setGlobals(globals) {
-			// terminate all existing workers
-			this._workers.forEach(function (worker) {
-				worker.terminate();
-			});
-
-			// flush worker pool
-			this._workers = [];
-
-			// replace globals
-			this._globals = globals;
-
-			this._next();
 		};
 
 		WorkerManager.prototype._runOnWorker = function _runOnWorker(worker, args, func) {
@@ -664,10 +680,6 @@ var task =
 
 	'use strict';
 
-	var _functionToObjectURL = __webpack_require__(2);
-
-	var _functionToObjectURL2 = _interopRequireDefault(_functionToObjectURL);
-
 	var _GeneralWorker2 = __webpack_require__(7);
 
 	var _GeneralWorker3 = _interopRequireDefault(_GeneralWorker2);
@@ -676,48 +688,61 @@ var task =
 
 	function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
 
+	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
 
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : _defaults(subClass, superClass); }
 
-	var WebWorker = function (_GeneralWorker) {
-		_inherits(WebWorker, _GeneralWorker);
+	var CompatibilityWorker = function (_GeneralWorker) {
+		_inherits(CompatibilityWorker, _GeneralWorker);
 
-		function WebWorker($config) {
-			_classCallCheck(this, WebWorker);
+		function CompatibilityWorker() {
+			_classCallCheck(this, CompatibilityWorker);
 
 			var _this = _possibleConstructorReturn(this, _GeneralWorker.apply(this, arguments));
 
-			_this.WORKER_SOURCE = 'function () {\n\t\tonmessage = function (event) {\n\t\t\tvar message = event.data;\n\n\t\t\tvar args = Object.keys(message).filter(function (key) {\n\t\t\t\treturn key.match(/^argument/);\n\t\t\t}).sort(function (a, b) {\n\t\t\t\treturn parseInt(a.slice(8), 10) - parseInt(b.slice(8), 10);\n\t\t\t}).map(function (key) {\n\t\t\t\treturn message[key];\n\t\t\t});\n\n\t\t\ttry {\n\t\t\t\tvar result = eval(\'(\' + message.func + \')\').apply(null, args);\n\n\t\t\t\tif (typeof Promise != \'undefined\' && result instanceof Promise) {\n\t\t\t\t\tresult.then(function (result) {\n\t\t\t\t\t\tpostMessage({id: message.id, result: result});\n\t\t\t\t\t}).catch(function (error) {\n\t\t\t\t\t\tpostMessage({id: message.id, error: error.stack});\n\t\t\t\t\t});\n\t\t\t\t} else {\n\t\t\t\t\tpostMessage({id: message.id, result: result});\n\t\t\t\t}\n\t\t\t} catch (error) {\n\t\t\t\tpostMessage({id: message.id, error: error.stack});\n\t\t\t}\n\t\t}\n\t}';
-
-			_this._onMessage = function (event) {
-				var message = event.data;
-				_this.handleWorkerMessage(message);
-			};
-
 			_this.postMessage = function (message, options) {
-				_this._log('sending taskId(' + message.id + ') to worker process');
-				_this._worker.postMessage(message, options);
+				// toss it out of the event loop
+				_this._setTimeoutID = setTimeout(function () {
+					var args = Object.keys(message).filter(function (key) {
+						return key.match(/^argument/);
+					}).sort(function (a, b) {
+						return parseInt(a.slice(8), 10) - parseInt(b.slice(8), 10);
+					}).map(function (key) {
+						return message[key];
+					});
+
+					var functionBody = message.func.substring(message.func.indexOf('{') + 1, message.func.lastIndexOf('}')),
+					    argNames = message.func.substring(message.func.indexOf('(') + 1, message.func.indexOf(')')).split(',');
+
+					var func = new (Function.prototype.bind.apply(Function, [null].concat(_toConsumableArray(argNames), [functionBody])))();
+
+					// we cant use eval
+					try {
+						var result = func.apply(undefined, _toConsumableArray(args));
+						_this.handleWorkerMessage({ id: message.id, result: result });
+					} catch (error) {
+						_this.handleWorkerMessage({ id: message.id, 'error': error.stack });
+					}
+				}, 1);
 			};
 
 			_this.terminate = function () {
-				_this._log('terminated');
-				_this._worker.terminate();
+				clearTimeout(_this._setTimeoutID);
+				_this._setTimeoutID = null;
 			};
 
-			_this._worker = new Worker((0, _functionToObjectURL2.default)(_this.WORKER_SOURCE));
-			_this._worker.addEventListener('message', _this._onMessage);
-
-			_this._log('initialized');
+			_this._setTimeoutID = null;
 			return _this;
 		}
 
-		return WebWorker;
+		return CompatibilityWorker;
 	}(_GeneralWorker3.default);
 
-	module.exports = WebWorker;
+	module.exports = CompatibilityWorker;
 
 /***/ }),
 /* 7 */
@@ -842,6 +867,10 @@ var task =
 
 	'use strict';
 
+	var _functionToObjectURL = __webpack_require__(2);
+
+	var _functionToObjectURL2 = _interopRequireDefault(_functionToObjectURL);
+
 	var _GeneralWorker2 = __webpack_require__(7);
 
 	var _GeneralWorker3 = _interopRequireDefault(_GeneralWorker2);
@@ -850,61 +879,48 @@ var task =
 
 	function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
 
-	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
-
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
 
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : _defaults(subClass, superClass); }
 
-	var CompatibilityWorker = function (_GeneralWorker) {
-		_inherits(CompatibilityWorker, _GeneralWorker);
+	var WebWorker = function (_GeneralWorker) {
+		_inherits(WebWorker, _GeneralWorker);
 
-		function CompatibilityWorker() {
-			_classCallCheck(this, CompatibilityWorker);
+		function WebWorker($config) {
+			_classCallCheck(this, WebWorker);
 
 			var _this = _possibleConstructorReturn(this, _GeneralWorker.apply(this, arguments));
 
+			_this.WORKER_SOURCE = 'function () {\n\t\tonmessage = function (event) {\n\t\t\tvar message = event.data;\n\n\t\t\tvar args = Object.keys(message).filter(function (key) {\n\t\t\t\treturn key.match(/^argument/);\n\t\t\t}).sort(function (a, b) {\n\t\t\t\treturn parseInt(a.slice(8), 10) - parseInt(b.slice(8), 10);\n\t\t\t}).map(function (key) {\n\t\t\t\treturn message[key];\n\t\t\t});\n\n\t\t\ttry {\n\t\t\t\tvar result = eval(\'(\' + message.func + \')\').apply(null, args);\n\n\t\t\t\tif (typeof Promise != \'undefined\' && result instanceof Promise) {\n\t\t\t\t\tresult.then(function (result) {\n\t\t\t\t\t\tpostMessage({id: message.id, result: result});\n\t\t\t\t\t}).catch(function (error) {\n\t\t\t\t\t\tpostMessage({id: message.id, error: error.stack});\n\t\t\t\t\t});\n\t\t\t\t} else {\n\t\t\t\t\tpostMessage({id: message.id, result: result});\n\t\t\t\t}\n\t\t\t} catch (error) {\n\t\t\t\tpostMessage({id: message.id, error: error.stack});\n\t\t\t}\n\t\t}\n\t}';
+
+			_this._onMessage = function (event) {
+				var message = event.data;
+				_this.handleWorkerMessage(message);
+			};
+
 			_this.postMessage = function (message, options) {
-				// toss it out of the event loop
-				_this._setTimeoutID = setTimeout(function () {
-					var args = Object.keys(message).filter(function (key) {
-						return key.match(/^argument/);
-					}).sort(function (a, b) {
-						return parseInt(a.slice(8), 10) - parseInt(b.slice(8), 10);
-					}).map(function (key) {
-						return message[key];
-					});
-
-					var functionBody = message.func.substring(message.func.indexOf('{') + 1, message.func.lastIndexOf('}')),
-					    argNames = message.func.substring(message.func.indexOf('(') + 1, message.func.indexOf(')')).split(',');
-
-					var func = new (Function.prototype.bind.apply(Function, [null].concat(_toConsumableArray(argNames), [functionBody])))();
-
-					// we cant use eval
-					try {
-						var result = func.apply(undefined, _toConsumableArray(args));
-						_this.handleWorkerMessage({ id: message.id, result: result });
-					} catch (error) {
-						_this.handleWorkerMessage({ id: message.id, 'error': error.stack });
-					}
-				}, 1);
+				_this._log('sending taskId(' + message.id + ') to worker process');
+				_this._worker.postMessage(message, options);
 			};
 
 			_this.terminate = function () {
-				clearTimeout(_this._setTimeoutID);
-				_this._setTimeoutID = null;
+				_this._log('terminated');
+				_this._worker.terminate();
 			};
 
-			_this._setTimeoutID = null;
+			_this._worker = new Worker((0, _functionToObjectURL2.default)(_this.WORKER_SOURCE));
+			_this._worker.addEventListener('message', _this._onMessage);
+
+			_this._log('initialized');
 			return _this;
 		}
 
-		return CompatibilityWorker;
+		return WebWorker;
 	}(_GeneralWorker3.default);
 
-	module.exports = CompatibilityWorker;
+	module.exports = WebWorker;
 
 /***/ })
 /******/ ]);

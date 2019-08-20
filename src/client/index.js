@@ -1,15 +1,32 @@
 import isModern from './isModern';
 import WorkerManager from '../WorkerManager';
 import generateTaskFactoryMethod from '../generateTaskFactoryMethod';
+import CompatibilityWorker from './CompatibilityWorker';
 
-const defaults = {
-	maxWorkers: navigator.hardwareConcurrency
+let WorkerProxies = {
+	CompatibilityWorker
 };
 
-var WorkerProxy = isModern() ? require('./WebWorker') : require('./CompatibilityWorker');
+if (isModern()) {
+	WorkerProxies.DefaultWorkerProxy = require('./WebWorker');
+}
 
-// expose default instance directly
-module.exports = new WorkerManager(defaults, {DefaultWorkerProxy: WorkerProxy});
+// const defaults = {
+// 	maxWorkers: navigator.hardwareConcurrency
+// };
 
-// allow custom settings (task.js factory)
-module.exports.defaults = generateTaskFactoryMethod(defaults, {DefaultWorkerProxy: WorkerProxy}, WorkerManager);
+//var WebWorker = isModern() ? require('./WebWorker') : require('./CompatibilityWorker');
+module.exports = class ServerWorkerManager extends WorkerManager {
+	constructor ($config) {
+		super($config, WorkerProxies);
+	}
+};
+// module.exports = class ServerWorkerManager extends WorkerManager {
+// 	WorkerProxies = WorkerProxies;
+// };
+// console.log(module.exports);
+// // expose default instance directly
+// module.exports = new WorkerManager(defaults, {DefaultWorkerProxy: WorkerProxy});
+
+// // allow custom settings (task.js factory)
+// module.exports.defaults = generateTaskFactoryMethod(defaults, {DefaultWorkerProxy: WorkerProxy}, WorkerManager);

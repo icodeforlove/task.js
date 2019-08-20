@@ -12,6 +12,8 @@ class WorkerManager {
 				process.exit(1);
 			}
 			this._WorkerProxy = WorkerProxies.NodeWorkerThread;
+		} else if ($config.workerType == 'compatibility_worker') {
+			this._WorkerProxy = WorkerProxies.CompatibilityWorker;
 		} else {
 			this._WorkerProxy = WorkerProxies.DefaultWorkerProxy;
 		}
@@ -93,21 +95,6 @@ class WorkerManager {
 		}
 	}
 
-	setGlobals (globals) {
-		// terminate all existing workers
-		this._workers.forEach(function (worker) {
-			worker.terminate();
-		});
-
-		// flush worker pool
-		this._workers = [];
-
-		// replace globals
-		this._globals = globals;
-
-		this._next();
-	}
-
 	_runOnWorker(worker, args, func) {
 		return new Promise (function (resolve, reject) {
 			worker.run({
@@ -147,11 +134,6 @@ class WorkerManager {
 				callback
 			});
 		}.bind(this);
-	}
-
-	decorate = (target, key) => {
-		target[key] = this.wrap(target[key]);
-		return target;
 	}
 
 	terminate () {

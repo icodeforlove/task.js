@@ -2,11 +2,10 @@ import 'babel-polyfill';
 
 window.Promise = require('bluebird');
 
-import task from '../../src/client';
-import CompatibilityWorker from '../../src/client/CompatibilityWorker';
+import Task from '../../src/client';
 
 describe('General Tests', require(`${__dirname}/../general.js`)(
-	task,
+	Task,
 	Promise,
-	CompatibilityWorker
+	{workerType: 'compatibility_worker'}
 ));
