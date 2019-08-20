@@ -52,19 +52,6 @@ module.exports = function (Task, Promise, {workerType} = {}) {
 			});
 		}
 
-		it('can run a single task using a callback', function(done) {
-			task.run({
-				arguments: [2],
-				function: function (number) {
-					return Math.pow(number, 2);
-				},
-				callback: function (error, squaredNumber) {
-					expect(squaredNumber).toBe(4);
-					done();
-				}
-			});
-		});
-
 		it('can run many tasks with many workers', function(done) {
 			function squareAsync () {
 				return task.run({
@@ -175,19 +162,6 @@ module.exports = function (Task, Promise, {workerType} = {}) {
 			}
 
 			Promise.map(numbers, powAsync).catch(function (error) {
-				expect(!!error.toString().match(/undefinedVar/)).toEqual(true);
-				done();
-			});
-		});
-
-		it('can handle an error using callbacks', function(done) {
-			function pow(number) {
-				return Math.pow(number, undefinedVar);
-			}
-
-			var powAsync = task.wrap(pow);
-
-			powAsync(1, function (error, number) {
 				expect(!!error.toString().match(/undefinedVar/)).toEqual(true);
 				done();
 			});

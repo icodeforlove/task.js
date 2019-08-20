@@ -36,23 +36,17 @@ Before using this module I want to expose the current performance issues
 
 Rule of thumb in node keep your object size under 150kb, and in the clientside version you can go crazy and send 40MB array buffers if transferables are supported.
 
-## callbacks and promises
-
-task.js supports both styles
+## usage
 
 ```javascript
-var powTask = task.wrap(pow);
 
-// callbacks
-powTask(2, function (error, result) {
-
+let powTask = task.wrap(number => {
+	// this gets ran inside of a worker
+	return Math.pow(number, 2);
 });
 
 // promises
-powTask(2).then(
-	function (result) {},
-	function (error) {}
-);
+conssole.log(await powTask(2));
 ```
 
 ## task.defaults (optional)
@@ -95,19 +89,6 @@ powTask(2).then(function (squaredNumber) {
 ```
 
 But keep in mind that your function cannot reference anything inside of your current scope because it is running inside of a worker.
-
-## task.decorate
-
-You can use task decorate for class methods.
-
-```javascript
-class MathTask () {
-	@task.decorate
-	pow(num, pow) {
-		return Math.pow(num, pow);
-	}
-}
-```
 
 ## task.run
 
@@ -197,19 +178,3 @@ task.defaults({
 ```
 
 Keep in mind that it is ok to have a slow initialize, no work will actually be processed until there is a fully initialized worker.
-
-## task.setGlobals
-
-You can set globals across all of your workers like this
-
-```javascript
-task.setGlobals({
-	data: {one: 1}
-});
-```
-
-The above will kill all current workers, create new ones, and then assign the new workers the outstanding tasks.
-
-## compatibility
-
-[![Selenium Test Status](https://saucelabs.com/browser-matrix/task-js.svg)](https://saucelabs.com/u/task-js)

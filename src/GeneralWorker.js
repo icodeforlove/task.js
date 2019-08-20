@@ -42,18 +42,10 @@ class GeneralWorker {
 			var task = this.tasks[taskIndex];
 			if (message.error) {
 				this._log(`taskId(${task.id}) has thrown an error ${message.error}`);
-				if (task.callback) {
-					task.callback(new Error(`task.js: ${message.error}`));
-				} else {
-					task.reject(new Error(`task.js: ${message.error}`));
-				}
+				task.reject(new Error(`task.js: ${message.error}`));
 			} else {
 				this._log(`taskId(${task.id}) has completed`);
-				if (task.callback) {
-					task.callback(null, message.result);
-				} else {
-					task.resolve(message.result);
-				}
+				task.resolve(message.result);
 			}
 			this._onTaskComplete(this);
 			this.tasks.splice(taskIndex, 1);
@@ -68,7 +60,6 @@ class GeneralWorker {
 			startTime: new Date(),
 			resolve: $options.resolve,
 			reject: $options.reject,
-			callback: $options.callback,
 			$options: $options
 		};
 
@@ -89,11 +80,7 @@ class GeneralWorker {
 
 	_purgeTasks(reason) {
 		this.tasks.forEach(task => {
-			if (task.callback) {
-				task.callback(reason);
-			} else {
-				task.reject(reason);
-			}
+			task.reject(reason);
 		});
 		this.tasks = [];
 	}

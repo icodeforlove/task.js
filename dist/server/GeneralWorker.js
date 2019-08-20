@@ -32,18 +32,10 @@ var GeneralWorker = function () {
 				var task = _this.tasks[taskIndex];
 				if (message.error) {
 					_this._log('taskId(' + task.id + ') has thrown an error ' + message.error);
-					if (task.callback) {
-						task.callback(new Error('task.js: ' + message.error));
-					} else {
-						task.reject(new Error('task.js: ' + message.error));
-					}
+					task.reject(new Error('task.js: ' + message.error));
 				} else {
 					_this._log('taskId(' + task.id + ') has completed');
-					if (task.callback) {
-						task.callback(null, message.result);
-					} else {
-						task.resolve(message.result);
-					}
+					task.resolve(message.result);
 				}
 				_this._onTaskComplete(_this);
 				_this.tasks.splice(taskIndex, 1);
@@ -76,7 +68,6 @@ var GeneralWorker = function () {
 			startTime: new Date(),
 			resolve: $options.resolve,
 			reject: $options.reject,
-			callback: $options.callback,
 			$options: $options
 		};
 
@@ -97,11 +88,7 @@ var GeneralWorker = function () {
 
 	GeneralWorker.prototype._purgeTasks = function _purgeTasks(reason) {
 		this.tasks.forEach(function (task) {
-			if (task.callback) {
-				task.callback(reason);
-			} else {
-				task.reject(reason);
-			}
+			task.reject(reason);
 		});
 		this.tasks = [];
 	};

@@ -1,4 +1,4 @@
-/*! task.js - 0.0.31 - clientside */
+/*! task.js - 0.0.32 - clientside */
 var task =
 /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
@@ -294,17 +294,12 @@ var task =
 
 			this._log('added taskId(' + task.id + ') to the queue');
 
-			if (!task.callback) {
-				return new Promise(function (resolve, reject) {
-					task.resolve = resolve;
-					task.reject = reject;
-					this._queue.push(task);
-					this._next();
-				}.bind(this));
-			} else {
+			return new Promise(function (resolve, reject) {
+				task.resolve = resolve;
+				task.reject = reject;
 				this._queue.push(task);
 				this._next();
-			}
+			}.bind(this));
 		};
 
 		WorkerManager.prototype._runOnWorker = function _runOnWorker(worker, args, func) {
@@ -325,7 +320,6 @@ var task =
 
 			return function () {
 				var args = Array.from(arguments),
-				    callback = null,
 				    transferables = null;
 
 				if (useTransferables) {
@@ -336,17 +330,10 @@ var task =
 					args = args.slice(0, -1);
 				}
 
-				if (typeof args[args.length - 1] === 'function') {
-					// apparently splice is broken in ie8
-					callback = args.slice(-1).pop();
-					args = args.slice(0, -1);
-				}
-
 				return this.run({
 					arguments: args,
 					transferables: transferables,
-					function: func,
-					callback: callback
+					function: func
 				});
 			}.bind(this);
 		};
@@ -782,18 +769,10 @@ var task =
 					var task = _this.tasks[taskIndex];
 					if (message.error) {
 						_this._log('taskId(' + task.id + ') has thrown an error ' + message.error);
-						if (task.callback) {
-							task.callback(new Error('task.js: ' + message.error));
-						} else {
-							task.reject(new Error('task.js: ' + message.error));
-						}
+						task.reject(new Error('task.js: ' + message.error));
 					} else {
 						_this._log('taskId(' + task.id + ') has completed');
-						if (task.callback) {
-							task.callback(null, message.result);
-						} else {
-							task.resolve(message.result);
-						}
+						task.resolve(message.result);
 					}
 					_this._onTaskComplete(_this);
 					_this.tasks.splice(taskIndex, 1);
@@ -826,7 +805,6 @@ var task =
 				startTime: new Date(),
 				resolve: $options.resolve,
 				reject: $options.reject,
-				callback: $options.callback,
 				$options: $options
 			};
 
@@ -847,11 +825,7 @@ var task =
 
 		GeneralWorker.prototype._purgeTasks = function _purgeTasks(reason) {
 			this.tasks.forEach(function (task) {
-				if (task.callback) {
-					task.callback(reason);
-				} else {
-					task.reject(reason);
-				}
+				task.reject(reason);
 			});
 			this.tasks = [];
 		};

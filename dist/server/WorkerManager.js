@@ -131,17 +131,12 @@ var WorkerManager = function () {
 
 		this._log('added taskId(' + task.id + ') to the queue');
 
-		if (!task.callback) {
-			return new Promise(function (resolve, reject) {
-				task.resolve = resolve;
-				task.reject = reject;
-				this._queue.push(task);
-				this._next();
-			}.bind(this));
-		} else {
+		return new Promise(function (resolve, reject) {
+			task.resolve = resolve;
+			task.reject = reject;
 			this._queue.push(task);
 			this._next();
-		}
+		}.bind(this));
 	};
 
 	WorkerManager.prototype._runOnWorker = function _runOnWorker(worker, args, func) {
@@ -162,7 +157,6 @@ var WorkerManager = function () {
 
 		return function () {
 			var args = Array.from(arguments),
-			    callback = null,
 			    transferables = null;
 
 			if (useTransferables) {
@@ -173,17 +167,10 @@ var WorkerManager = function () {
 				args = args.slice(0, -1);
 			}
 
-			if (typeof args[args.length - 1] === 'function') {
-				// apparently splice is broken in ie8
-				callback = args.slice(-1).pop();
-				args = args.slice(0, -1);
-			}
-
 			return this.run({
 				arguments: args,
 				transferables: transferables,
-				function: func,
-				callback: callback
+				function: func
 			});
 		}.bind(this);
 	};
