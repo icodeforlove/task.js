@@ -8,7 +8,11 @@ class WebWorker extends GeneralWorker {
 		this._worker = new Worker(functionToObjectURL(this.WORKER_SOURCE));
 		this._worker.addEventListener('message', this._onMessage);
 
-		this._log(`initialized`);
+		if (this._debug) {
+			this._log({
+				action: 'initialized'
+			});
+		}
 	}
 
 	WORKER_SOURCE = `function () {
@@ -47,12 +51,22 @@ class WebWorker extends GeneralWorker {
 	}
 
 	postMessage = (message, options) => {
-		this._log(`sending taskId(${message.id}) to worker process`);
+		if (this._debug) {
+			this._log({
+				taskId: message.id,
+				action: 'send_task_to_actual_worker',
+				message: `sending taskId(${message.id}) to worker process`
+			});
+		}
 		this._worker.postMessage(message, options);
 	}
 
 	terminate = () => {
-		this._log(`terminated`);
+		if (this._debug) {
+			this._log({
+				message: 'terminated'
+			});
+		}
 		this._worker.terminate();
 	}
 }

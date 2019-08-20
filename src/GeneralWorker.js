@@ -12,14 +12,30 @@ class GeneralWorker {
 		this._onExitHandler = $config.onExit;
 	}
 
-	_log (message) {
-		if (this._debug) {
-			this._logger(`task.js:worker[managerId(${this.managerId}) workerId(${this.id})]: ${message}`);
+	_log (data) {
+		let event = {
+			source: 'worker',
+			managerId: this.managerId,
+			workerId: this.id
+		};
+
+		Object.keys(data).forEach(key => {
+			event[key] = data[key];
+		});
+
+		if (!event.message) {
+			event.message = event.action;
 		}
+
+		this._logger(event);
 	}
 
 	handleWorkerExit = () => {
-		this._log('killed');
+		if (this._debug) {
+			this._log({
+				action: 'killed'
+			});
+		}
 		this._onExitHandler(this);
 	}
 
@@ -41,10 +57,22 @@ class GeneralWorker {
 		if (taskIndex !== null) {
 			var task = this.tasks[taskIndex];
 			if (message.error) {
-				this._log(`taskId(${task.id}) has thrown an error ${message.error}`);
+				if (this._debug) {
+					this._log({
+						taskId: task.id,
+						action: 'task_error',
+						message: `taskId(${task.id}) has thrown an error ${message.error}`
+					});
+				}
 				task.reject(new Error(`task.js: ${message.error}`));
 			} else {
-				this._log(`taskId(${task.id}) has completed`);
+				if (this._debug) {
+					this._log({
+						taskId: task.id,
+						action: 'task_completed',
+						message: `taskId(${task.id}) has completed`
+					});
+				}
 				task.resolve(message.result);
 			}
 			this._onTaskComplete(this);

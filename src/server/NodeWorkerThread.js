@@ -19,13 +19,30 @@ class NodeWorker extends GeneralWorker {
 		this._workerThreadId = this._worker.threadId;
 		this._alive = true;
 
-		this._log(`initialized`);
+		if (this._debug) {
+			this._log({
+				action: 'initialized'
+			});
+		}
 	}
 
-	_log = (message) => {
-		if (this._debug) {
-			this._logger(`task.js:worker[managerId(${this.managerId}) workerId(${this.id}) threadId(${this._workerThreadId})]: ${message}`);
+	_log (data) {
+		let event = {
+			source: 'worker_thread',
+			managerId: this.managerId,
+			workerId: this.id,
+			threadId: this._workerThreadId
+		};
+
+		Object.keys(data).forEach(key => {
+			event[key] = data[key];
+		});
+
+		if (!event.message) {
+			event.message = event.action;
 		}
+
+		this._logger(event);
 	}
 
 	_onExit = () => {
@@ -33,7 +50,11 @@ class NodeWorker extends GeneralWorker {
 			return;
 		}
 
-		this._log(`killed`);
+		if (this._debug) {
+			this._log({
+				action: 'killed'
+			});
+		}
 
 		this._alive = false;
 
@@ -41,17 +62,27 @@ class NodeWorker extends GeneralWorker {
 	}
 
 	_onMessage = (message) => {
-		//console.log(message);
 		this.handleWorkerMessage(message);
 	}
 
 	postMessage = (message) => {
-		this._log(`sending taskId(${message.id}) to worker process`);
+		if (this._debug) {
+			this._log({
+				taskId: message.id,
+				action: 'send_task_to_actual_worker',
+				message: `sending taskId(${message.id}) to worker process`
+			});
+		}
 		this._worker.postMessage(message);
 	}
 
 	terminate = () => {
-		this._log(`terminated`);
+		if (this._debug) {
+			this._log({
+				action: 'terminated'
+			});
+		}
+
 		this._worker.terminate();
 	}
 }

@@ -29,7 +29,14 @@ class WorkerManager {
 		this._globals = $config.globals;
 		this._globalsInitializationFunction = $config.initialize;
 		this._debug = $config.debug;
-		this._log(`creating new pool : ${JSON.stringify($config)}`);
+
+		if (this._debug) {
+			this._log({
+				action: 'create_new_pool',
+				message: `creating new pool : ${JSON.stringify($config)}`,
+				config: $config
+			});
+		}
 
 		this._workers = [];
 		this._workersInitializing = [];
@@ -40,7 +47,12 @@ class WorkerManager {
 		this._lastTaskTimeoutCheck = new Date();
 
 		if (this._warmStart) {
-			this._log(`warm starting workers`);
+			if (this._debug) {
+				this._log({
+					action: 'warmstart',
+					message: 'warm starting workers'
+				});
+			}
 
 			for (var i = 0; i < this._maxWorkers; i++) {
 				this._createWorker();
@@ -51,10 +63,21 @@ class WorkerManager {
 	static managerCount = 0;
 	static taskCount = 0;
 
-	_log (message) {
-		if (this._debug) {
-			this._logger(`task.js:manager[managerId(${this.id})] ${message}`);
+	_log (data) {
+		let event = {
+			source: 'manager',
+			managerId: this.id
+		};
+
+		Object.keys(data).forEach(key => {
+			event[key] = data[key];
+		});
+
+		if (!event.message) {
+			event.message = event.action;
 		}
+
+		this._logger(event);
 	}
 
 	getActiveWorkerCount () {
@@ -80,7 +103,13 @@ class WorkerManager {
 
 		task.id = ++WorkerManager.taskCount;
 
-		this._log(`added taskId(${task.id}) to the queue`);
+		if (this._debug) {
+			this._log({
+				action: 'add_to_queue',
+				taskId: task.id,
+				message: `added taskId(${task.id}) to the queue`
+			});
+		}
 
 		return new Promise(function (resolve, reject) {
 			task.resolve = resolve;
@@ -124,7 +153,12 @@ class WorkerManager {
 	}
 
 	terminate () {
-		this._log(`terminated`);
+		if (this._debug) {
+			this._log({
+				action: 'terminated',
+				message: 'terminated'
+			});
+		}
 
 		// kill idle timeout (if it exists)
 		if (this._idleTimeout && typeof this._idleCheckIntervalID == 'number') {
@@ -175,7 +209,14 @@ class WorkerManager {
 		}
 
 		let task = this._queue.shift();
-		this._log(`sending taskId(${task.id}) to workerId(${worker.id})`)
+		if (this._debug) {
+			this._log({
+				action: 'send_task_to_worker',
+				taskId: task.id,
+				workerId: worker.id,
+				message: `sending taskId(${task.id}) to workerId(${worker.id})`
+			});
+		}
 		worker.run(task);
 	}
 
@@ -184,7 +225,13 @@ class WorkerManager {
 	}
 
 	_onWorkerExit = (worker) => {
-		this._log(`worker died, reissuing task`);
+		if (this._debug) {
+			this._log({
+				action: 'worker_died',
+				workerId: worker.id,
+				message: `worker died, reissuing tasks`
+			});
+		}
 
 		// purge dead worker from pool
 		this._workers = this._workers.filter(item => item != worker);
@@ -199,7 +246,13 @@ class WorkerManager {
 	}
 
 	_flushIdleWorkers () {
-		this._log(`flushing idle workers`);
+		if (this._debug) {
+			this._log({
+				action: 'flush_idle_workers',
+				message: `flushing idle workers`
+			});
+		}
+
 		this._workers = this._workers.filter(function (worker) {
 			if (worker.tasks.length === 0 && new Date() - worker.lastTaskTimestamp > this._idleTimeout) {
 				worker.terminate();
@@ -237,7 +290,13 @@ class WorkerManager {
 		});
 
 		if (this._globalsInitializationFunction || this._globals) {
-			this._log(`running global initialization code`);
+			if (this._debug) {
+				this._log({
+					action: 'run_global_initialize',
+					message: `running global initialization code`
+				});
+			}
+
 			var globalsInitializationFunction = `
 				function (_globals) {
 					globals = (${(this._globalsInitializationFunction || function (globals) {return globals}).toString()})(_globals || {});
