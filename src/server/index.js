@@ -13,9 +13,3 @@ module.exports = class ServerWorkerManager extends WorkerManager {
 		super($config, {DefaultWorkerProxy: NodeWorker, NodeWorkerThread});
 	}
 };
-//console.log(module.exports);
-// // expose default instance directly
-// module.exports = new WorkerManager(defaults, {DefaultWorkerProxy: NodeWorker, NodeWorkerThread});
-
-// // allow custom settings (task.js factory)
-// module.exports.defaults = generateTaskFactoryMethod(defaults, {DefaultWorkerProxy: NodeWorker, NodeWorkerThread}, WorkerManager);

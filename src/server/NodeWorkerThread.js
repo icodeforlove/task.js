@@ -16,6 +16,7 @@ class NodeWorker extends GeneralWorker {
 		this._worker.on('close', this._onExit);
 		this._worker.on('disconnect', this._onExit);
 		this._worker.on('error', this._onExit);
+		this._workerThreadId = this._worker.threadId;
 		this._alive = true;
 
 		this._log(`initialized`);
@@ -23,7 +24,7 @@ class NodeWorker extends GeneralWorker {
 
 	_log = (message) => {
 		if (this._debug) {
-			this._logger(`task.js:worker[managerId(${this.managerId}) workerId(${this.id}) threadId(${this._worker.threadId})]: ${message}`);
+			this._logger(`task.js:worker[managerId(${this.managerId}) workerId(${this.id}) threadId(${this._workerThreadId})]: ${message}`);
 		}
 	}
 
