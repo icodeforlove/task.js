@@ -1,4 +1,4 @@
-import GeneralWorker from '../GeneralWorker';
+const GeneralWorker = require('../GeneralWorker');
 
 class NodeWorker extends GeneralWorker {
 	constructor ($config) {

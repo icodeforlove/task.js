@@ -1,8 +1,16 @@
-import 'babel-polyfill';
+require('babel-polyfill');
 
 window.Promise = require('bluebird');
 
-import Task from '../../src/client';
+const Task = require('../../src/client/index.js');
+
+(function() {
+	jasmine.getEnv().addReporter(new (function () {
+		this.jasmineDone = async function(result) {
+			window.JASMINE_FINISHED_STATUS = result.overallStatus;
+		};
+	}));
+})();
 
 describe('General Tests', require(`${__dirname}/../general.js`)(
 	Task,

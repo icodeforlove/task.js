@@ -1,8 +1,9 @@
-import isModern from './isModern';
-import WorkerManager from '../WorkerManager';
-import generateTaskFactoryMethod from '../generateTaskFactoryMethod';
-import CompatibilityWorker from './CompatibilityWorker';
+const isModern = require('./isModern');
+const WorkerManager = require('../WorkerManager');
+const generateTaskFactoryMethod = require('../generateTaskFactoryMethod');
+const CompatibilityWorker = require('./CompatibilityWorker');
 
+// console.log(isModern);
 let WorkerProxies = {
 	CompatibilityWorker
 };
@@ -21,12 +22,3 @@ module.exports = class ServerWorkerManager extends WorkerManager {
 		super($config, WorkerProxies);
 	}
 };
-// module.exports = class ServerWorkerManager extends WorkerManager {
-// 	WorkerProxies = WorkerProxies;
-// };
-// console.log(module.exports);
-// // expose default instance directly
-// module.exports = new WorkerManager(defaults, {DefaultWorkerProxy: WorkerProxy});
-
-// // allow custom settings (task.js factory)
-// module.exports.defaults = generateTaskFactoryMethod(defaults, {DefaultWorkerProxy: WorkerProxy}, WorkerManager);

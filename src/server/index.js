@@ -1,8 +1,8 @@
-import os from 'os';
-import NodeWorker from './NodeWorker';
-import NodeWorkerThread from './NodeWorkerThread';
-import WorkerManager from '../WorkerManager';
-import generateTaskFactoryMethod from '../generateTaskFactoryMethod';
+const os = require('os');
+const NodeWorker = require('./NodeWorker');
+const NodeWorkerThread = require('./NodeWorkerThread');
+const WorkerManager = require('../WorkerManager');
+const generateTaskFactoryMethod = require('../generateTaskFactoryMethod');
 
 const defaults = {
 	maxWorkers: os.cpus().length

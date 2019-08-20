@@ -1,4 +1,4 @@
-import GeneralWorker from '../GeneralWorker';
+const GeneralWorker = require('../GeneralWorker');
 
 class CompatibilityWorker extends GeneralWorker {
 	constructor () {

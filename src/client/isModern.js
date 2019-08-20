@@ -1,4 +1,4 @@
-import functionToObjectURL from './functionToObjectURL';
+const functionToObjectURL = require('./functionToObjectURL');
 
 module.exports = function isModern () {
 	if (typeof Worker != 'undefined' && (window.URL || window.webkitURL)) {

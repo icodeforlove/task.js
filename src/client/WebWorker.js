@@ -1,5 +1,5 @@
-import functionToObjectURL from './functionToObjectURL';
-import GeneralWorker from '../GeneralWorker';
+const functionToObjectURL = require('./functionToObjectURL');
+const GeneralWorker = require('../GeneralWorker');
 
 class WebWorker extends GeneralWorker {
 	constructor ($config) {

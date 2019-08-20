@@ -1,5 +1,5 @@
-import cp from 'child_process';
-import GeneralWorker from '../GeneralWorker';
+const cp = require('child_process');
+const GeneralWorker = require('../GeneralWorker');
 
 class NodeWorker extends GeneralWorker {
 	constructor ($config) {
