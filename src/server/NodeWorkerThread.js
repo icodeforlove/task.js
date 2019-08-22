@@ -65,7 +65,7 @@ class NodeWorker extends GeneralWorker {
 		this.handleWorkerMessage(message);
 	}
 
-	postMessage = (message) => {
+	postMessage = (message, transferables) => {
 		if (this._debug) {
 			this._log({
 				taskId: message.id,
@@ -73,7 +73,8 @@ class NodeWorker extends GeneralWorker {
 				message: `sending taskId(${message.id}) to worker process`
 			});
 		}
-		this._worker.postMessage(message);
+
+		this._worker.postMessage(message, transferables);
 	}
 
 	terminate = () => {

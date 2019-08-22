@@ -1,3 +1,21 @@
+class Transferables {
+	constructor (transferables) {
+		this.transferables = transferables.map(transferable => {
+			if (!(transferable instanceof ArrayBuffer) && transferable && transferable.buffer instanceof ArrayBuffer) {
+				return transferable.buffer;
+			} else if (transferable instanceof ArrayBuffer) {
+				return transferable;
+			} else {
+				throw new Error('Task.js: invalid transferable argument (ensure its a buffer backed array, or a buffer)');
+			}
+		});
+	}
+
+	toArray () {
+		return this.transferables;
+	}
+}
+
 class WorkerManager {
 	constructor ($config, WorkerProxies) {
 		$config = $config || {};
@@ -8,8 +26,7 @@ class WorkerManager {
 			try {
 				require('worker_threads');
 			} catch (error) {
-				console.error('Your current version, or configuration of Node.js does not support worker_threads.')
-				process.exit(1);
+				throw new Error('Your current version, or configuration of Node.js does not support worker_threads.');
 			}
 			this._WorkerProxy = WorkerProxies.NodeWorkerThread;
 		} else if ($config.workerType == 'compatibility_worker') {
@@ -19,6 +36,11 @@ class WorkerManager {
 		}
 
 		this._logger = $config.logger || console.log;
+		this._requires = $config.requires;
+
+		if (!($config.workerType === 'worker_threads' || $config.workerType === 'fork_worker') && this._requires) {
+			throw new Error('Task.js requires is not supported in a clientside environment.');
+		}
 
 		this._workerTaskConcurrency = ($config.workerTaskConcurrency || 1) - 1;
 		this._maxWorkers = $config.maxWorkers || 4;
@@ -84,7 +106,8 @@ class WorkerManager {
 		return this._workersInitializing.length + this._workers.length;
 	}
 
-	run (task) {
+	_run (task) {
+		// console.log(task);
 		if (this._idleTimeout && typeof this._idleCheckIntervalID !== 'number') {
 			this._idleCheckIntervalID = setInterval(this._flushIdleWorkers, this._idleCheckInterval);
 		}
@@ -131,20 +154,28 @@ class WorkerManager {
 		});
 	}
 
-	wrap (func, {useTransferables} = {useTransferables: false}) {
+	static transferables (...args) {
+		return new Transferables(args);
+	}
+
+	run (func, ...args) {
+		let wrappedFunc = this.wrap(func);
+
+		return wrappedFunc(...args);
+	}
+
+	wrap (func) {
 		return function () {
 			var args = Array.from(arguments),
-				transferables = null;
+				transferables = null,
+				lastArg = args.slice(-1)[0];
 
-			if (useTransferables) {
-				transferables = args.slice(-1)[0];
-				if (!Array.isArray(transferables)) {
-					throw new Error('Task expects to be passed a transferables array as its last argument.')
-				}
+			if (lastArg instanceof Transferables) {
+				transferables = lastArg.toArray();
 				args = args.slice(0, -1);
 			}
 
-			return this.run({
+			return this._run({
 				arguments: args,
 				transferables,
 				function: func
@@ -289,7 +320,7 @@ class WorkerManager {
 			onExit: this._onWorkerExit
 		});
 
-		if (this._globalsInitializationFunction || this._globals) {
+		if (this._globalsInitializationFunction || this._globals || this._requires) {
 			if (this._debug) {
 				this._log({
 					action: 'run_global_initialize',
@@ -297,11 +328,20 @@ class WorkerManager {
 				});
 			}
 
-			var globalsInitializationFunction = `
-				function (_globals) {
-					globals = (${(this._globalsInitializationFunction || function (globals) {return globals}).toString()})(_globals || {});
+			var globalsInitializationFunction = `function (_globals) {
+				let requires = ${JSON.stringify(this._requires || {})};
+				Object.keys(requires).forEach(key => {
+					global[key] = require(requires[key]);
+				});
+
+				if (typeof _globals != 'undefined') {
+					Object.keys(_globals).forEach(key => {
+						global[key] = _globals[key];
+					});
 				}
-			`.trim();
+
+				(${(this._globalsInitializationFunction || (() => {})).toString()})();
+			}`.trim();
 
 			this._workersInitializing.push(worker);
 			this._runOnWorker(worker, [this._globals || {}], globalsInitializationFunction).then(function () {

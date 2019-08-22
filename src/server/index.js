@@ -9,7 +9,13 @@ const defaults = {
 };
 
 module.exports = class ServerWorkerManager extends WorkerManager {
-	constructor ($config) {
-		super($config, {DefaultWorkerProxy: NodeWorker, NodeWorkerThread});
+	constructor ($config = {}) {
+		let config = {
+			workerType: 'fork_worker'
+		};
+
+		Object.keys($config).forEach(key => (config[key] = $config[key]));
+
+		super(config, {DefaultWorkerProxy: NodeWorker, NodeWorkerThread});
 	}
 };

@@ -16,6 +16,13 @@ class WebWorker extends GeneralWorker {
 	}
 
 	WORKER_SOURCE = `function () {
+		let global = new Proxy(
+		  {},
+		  {
+		    set: (obj, prop, newval) => (self[prop] = newval)
+		  }
+		);
+
 		onmessage = function (event) {
 			var message = event.data;
 
@@ -50,7 +57,7 @@ class WebWorker extends GeneralWorker {
 		this.handleWorkerMessage(message);
 	}
 
-	postMessage = (message, options) => {
+	postMessage = (message, transferables) => {
 		if (this._debug) {
 			this._log({
 				taskId: message.id,
@@ -58,7 +65,7 @@ class WebWorker extends GeneralWorker {
 				message: `sending taskId(${message.id}) to worker process`
 			});
 		}
-		this._worker.postMessage(message, options);
+		this._worker.postMessage(message, transferables);
 	}
 
 	terminate = () => {

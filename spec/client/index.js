@@ -11,9 +11,16 @@ const Task = require('../../src/client/index.js');
 		};
 	}));
 })();
+jasmine.DEFAULT_TIMEOUT_INTERVAL = 12000;
 
-describe('General Tests', require(`${__dirname}/../general.js`)(
+// describe('Browser Compatibility Tests', require(`${__dirname}/../general.js`)(
+// 	Task,
+// 	Promise,
+// 	{workerType: 'compatibility_worker'}
+// ));
+
+describe('Browser Web Worker Tests', require(`${__dirname}/../general.js`)(
 	Task,
 	Promise,
-	{workerType: 'compatibility_worker'}
+	{workerType: 'web_worker'}
 ));

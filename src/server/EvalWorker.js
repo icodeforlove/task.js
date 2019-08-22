@@ -1,5 +1,3 @@
-var globals = {};
-
 process.on('message', (message) => {
 	let args = Object.keys(message).filter(function (key) {
 		return key.match(/^argument/);
@@ -10,7 +8,7 @@ process.on('message', (message) => {
 	});
 
 	try {
-		var result = eval('(' + message.func + ')').apply(null, args);
+		let result = eval('(' + message.func + ')').apply(null, args);
 
 		if (typeof Promise != 'undefined' && result instanceof Promise) {
 			result.then(function (result) {

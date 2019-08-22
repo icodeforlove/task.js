@@ -72,25 +72,20 @@ var myCustomTask = task.defaults({
 
 behind the scenes it's spreading your dynamic work across your cores
 
-## task.wrap (method, {useTransferables: false})
+## task.wrap (Func|String)
 
 You can wrap a function if the method signatures match, and it doesn't rely on any external variables.
 
 ```javascript
 // non async
-function pow(number) {
-	return Math.pow(number, 2);
-}
+let pow = task.wrap(number => Math.pow(number, 2));
 
-var powTask = task.wrap(pow);
-powTask(2).then(function (squaredNumber) {
-	console.log(squaredNumber);
-});
+console.log(await pow(2));
 ```
 
 But keep in mind that your function cannot reference anything inside of your current scope because it is running inside of a worker.
 
-## task.run
+## task.run(Func|String, [...arguments])
 
 Below is an example of using a transferable
 
@@ -98,19 +93,14 @@ Below is an example of using a transferable
 // create buffer backed array
 var array = new Float32Array([1,3,3,7]);
 
-task.run({
-    arguments: [array.buffer],
-    transferables: [array.buffer], // optional, and only supported client-side
-    // if the browser supports transferables `array` will get zeroed out because 
-    // we flagged the buffer arg as transferable.
-    function: function (buffer) {
-    	// do intensive operations on your buffer
-        return buffer;
-    }
-}).then(function (buffer) {
-    // convert buffer back into original type
-    console.log(new Float32Array(buffer)); // [1,3,3,7]
-});
+let result = await task.run(
+	array => {
+		// do intensive operations on your buffer
+    	return array.buffer;
+	},
+	array,
+	Task.transferables(array)
+);
 ```
 
 ## task.terminate

@@ -19,22 +19,124 @@ module.exports = function (Task, Promise, {workerType} = {}) {
 		});
 
 		it('can run a single task', function(done) {
-			task.run({
-				arguments: [2],
-				function: function (number) {
-					return Math.pow(number, 2);
-				}
-			}).then(function (squaredNumber) {
-				expect(squaredNumber).toBe(4);
-				done();
-			});
+			task.run(number => Math.pow(number, 2), 2)
+				.then(function (squaredNumber) {
+					expect(squaredNumber).toBe(4);
+					done();
+				});
 		});
+
+		if (workerType === 'worker_threads' || workerType === 'web_worker') {
+			it('can use worker threads', function(done) {
+				let customTask = new Task({
+					maxWorkers: 1,
+					workerType
+				});
+
+				customTask.run(number => Math.pow(number, 2), 2)
+					.then(function (squaredNumber) {
+						expect(squaredNumber).toBe(4);
+						done();
+					})
+					.then(async () => {
+						await Promise.delay(0);
+						customTask.terminate();
+					});
+			});
+
+			it('can use SharedArrayBuffers', function(done) {
+				let customTask = new Task({
+					maxWorkers: 1,
+					workerType
+				});
+
+				let sharedarraybufferUint16Array = new Uint16Array(new SharedArrayBuffer(128));
+				sharedarraybufferUint16Array[0] = 100;
+
+				customTask.run(
+						sharedarraybufferUint16Array => {
+							sharedarraybufferUint16Array[0] = 42;
+						},
+						sharedarraybufferUint16Array
+					)
+					.then(function () {
+						expect(sharedarraybufferUint16Array[0]).toBe(42);
+						done();
+					})
+					.then(async () => {
+						await Promise.delay(0);
+						customTask.terminate();
+					});
+			});
+
+			it('can use transferables with wrap', function(done) {
+				let customTask = new Task({
+					workerType,
+					warmStart: true,
+					maxWorkers: 1,
+					workerTaskConcurrency: 1
+				});
+
+				let transferableUint16Array = new Uint16Array(128);
+				transferableUint16Array[0] = 100;
+
+				let transferableTask = customTask.wrap(transferableUint16Array => {
+					transferableUint16Array[0] = 42;
+					return transferableUint16Array.buffer;
+				});
+				transferableTask(
+						transferableUint16Array,
+						Task.transferables(transferableUint16Array)
+					)
+					.then(function (buffer) {
+						let transferredUint16Array = new Uint16Array(buffer);
+						expect(transferableUint16Array.length).toBe(0);
+						expect(transferredUint16Array[0]).toBe(42);
+						expect(transferredUint16Array.length).toBe(128);
+						done();
+					})
+					.then(async () => {
+						await Promise.delay(0);
+						customTask.terminate();
+					});
+			});
+
+			it('can use transferables with run', function(done) {
+				let customTask = new Task({
+					workerType,
+					warmStart: true,
+					maxWorkers: 1,
+					workerTaskConcurrency: 1
+				});
+
+				let transferableUint16Array = new Uint16Array(128);
+				transferableUint16Array[0] = 100;
+
+				customTask.run(
+						transferableUint16Array => {
+							transferableUint16Array[0] = 42;
+							return transferableUint16Array.buffer;
+						},
+						transferableUint16Array,
+						Task.transferables(transferableUint16Array)
+					)
+					.then(function (buffer) {
+						let transferredUint16Array = new Uint16Array(buffer);
+						expect(transferableUint16Array.length).toBe(0);
+						expect(transferredUint16Array[0]).toBe(42);
+						expect(transferredUint16Array.length).toBe(128);
+						done();
+					})
+					.then(async () => {
+						await Promise.delay(0);
+						customTask.terminate();
+					});
+			});
+		}
 
 		if (typeof Promise != 'undefined') {
 			it('can run a single async task', function(done) {
-				task.run({
-					arguments: [2],
-					function: function (number) {
+				task.run(number => {
 						if (typeof Promise !== 'undefined') {
 							return new Promise(function (resolve, reject) {
 								setTimeout(function () {
@@ -44,24 +146,18 @@ module.exports = function (Task, Promise, {workerType} = {}) {
 						} else {
 							return Math.pow(number, 2);
 						}
-					}
-				}).then(function (squaredNumber) {
-					expect(squaredNumber).toBe(4);
-					done();
-				});
+					}, 2)
+					.then(function (squaredNumber) {
+						expect(squaredNumber).toBe(4);
+						done();
+					});
 			});
 		}
 
 		it('can run many tasks with many workers', function(done) {
 			function squareAsync () {
-				return task.run({
-					arguments: arguments,
-					function: function (number) {
-						return Math.pow(number, 2);
-					}
-				});
+				return task.run(number => Math.pow(number, 2), ...arguments);
 			}
-
 
 			var numbers = [];
 			for (var i = 0; i < 100; i++) {
@@ -74,7 +170,6 @@ module.exports = function (Task, Promise, {workerType} = {}) {
 			});
 		});
 
-
 		it('can run many tasks with one worker', function(done) {
 			let customTask = new Task({
 				maxWorkers: 1,
@@ -82,12 +177,7 @@ module.exports = function (Task, Promise, {workerType} = {}) {
 			});
 
 			function squareAsync () {
-				return customTask.run({
-					arguments: arguments,
-					function: function (number) {
-						return Math.pow(number, 2);
-					}
-				});
+				return customTask.run(number => Math.pow(number, 2), ...arguments);
 			}
 
 			var numbers = [];
@@ -101,35 +191,6 @@ module.exports = function (Task, Promise, {workerType} = {}) {
 				done();
 			});
 		});
-
-		if (workerType === 'compatibility_worker') {
-			it('can run many tasks with a compatibility worker', function(done) {
-				let customTask = new Task({
-					maxWorkers: 1,
-					workerType
-				});
-
-				function squareAsync () {
-					return customTask.run({
-						arguments: arguments,
-						function: function (number) {
-							return Math.pow(number, 2);
-						}
-					});
-				}
-
-				var numbers = [];
-				for (var i = 0; i < 10; i++) {
-					numbers.push(i);
-				}
-
-				Promise.map(numbers, squareAsync).then(function (numbers) {
-					expect(numbers).toEqual([ 0, 1, 4, 9, 16, 25, 36, 49, 64, 81 ]);
-					customTask.terminate();
-					done();
-				});
-			});
-		}
 
 		it('can use wrap', function(done) {
 			function pow(number) {
@@ -176,7 +237,7 @@ module.exports = function (Task, Promise, {workerType} = {}) {
 			});
 
 			customTask.wrap(function () {
-				return globals.data;
+				return data;
 			})().then(function (data) {
 				expect(data).toEqual(1);
 				customTask.terminate();
@@ -215,18 +276,18 @@ module.exports = function (Task, Promise, {workerType} = {}) {
 
 		it('can use globals and initialize', function (done) {
 			let customTask = new Task({
+				maxWorkers: 1,
 				globals: {
 					data: 1
 				},
-				initialize: function (globals) {
-					globals.data += 1;
-					return globals;
+				initialize: () => {
+					global.data = data + 1;
 				},
 				workerType
 			});
 
 			customTask.wrap(function () {
-				return globals.data;
+				return data;
 			})().then(function (data) {
 				expect(data).toEqual(2);
 				customTask.terminate();
