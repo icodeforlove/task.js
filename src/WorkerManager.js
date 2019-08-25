@@ -45,6 +45,7 @@ class WorkerManager {
 		this._taskTimeout = $config.taskTimeout || 0;
 		this._idleCheckInterval = 1000;
 		this._warmStart = $config.warmStart || false;
+		this._warmStartCompleted = false;
 		this._globals = $config.globals;
 		this._globalsInitializationFunction = $config.initialize;
 		this._debug = $config.debug;
@@ -77,6 +78,8 @@ class WorkerManager {
 				for (let i = 0; i < this._maxWorkers; i++) {
 					this._createWorker();
 				}
+
+				this._warmStartCompleted = true;
 
 				if (this._debug) {
 					this._log({
@@ -306,7 +309,10 @@ class WorkerManager {
 
 		if (idleWorkers.length) {
 			return idleWorkers[0];
-		} else if (this._workers.length < this._maxWorkers && this._workersInitializing.length === 0) {
+		} else if (
+			this._workers.length < this._maxWorkers && this._workersInitializing.length === 0 &&
+			!(this._warmStart && !this._warmStartCompleted)
+		) {
 			return this._createWorker();
 		} else {
 			return null;

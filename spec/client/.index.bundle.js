@@ -442,6 +442,7 @@ function () {
     this._taskTimeout = $config.taskTimeout || 0;
     this._idleCheckInterval = 1000;
     this._warmStart = $config.warmStart || false;
+    this._warmStartCompleted = false;
     this._globals = $config.globals;
     this._globalsInitializationFunction = $config.initialize;
     this._debug = $config.debug;
@@ -474,6 +475,8 @@ function () {
         for (var i = 0; i < _this._maxWorkers; i++) {
           _this._createWorker();
         }
+
+        _this._warmStartCompleted = true;
 
         if (_this._debug) {
           _this._log({
@@ -665,7 +668,7 @@ function () {
 
       if (idleWorkers.length) {
         return idleWorkers[0];
-      } else if (this._workers.length < this._maxWorkers && this._workersInitializing.length === 0) {
+      } else if (this._workers.length < this._maxWorkers && this._workersInitializing.length === 0 && !(this._warmStart && !this._warmStartCompleted)) {
         return this._createWorker();
       } else {
         return null;
@@ -20300,7 +20303,7 @@ module.exports = function (Task, Promise) {
         expect(customTask.getActiveWorkerCount()).toEqual(2);
         customTask.terminate();
         done();
-      }, 100);
+      }, 200);
     });
     it('can warmStart with globals', function (done) {
       var customTask = new Task({
@@ -20315,7 +20318,7 @@ module.exports = function (Task, Promise) {
         expect(customTask.getActiveWorkerCount()).toEqual(2);
         customTask.terminate();
         done();
-      }, 100);
+      }, 200);
     });
     it('can use requires', function (done) {
       var customTask = new Task({
