@@ -3,6 +3,8 @@ This module is intended to make working with blocking tasks a bit easier, and is
 
 **[LIVE DEMO](https://codepen.io/icodeforlove/full/ZOjBBB)**
 
+It works by creating a worker pool, and sending tasks to workers that are not busy. If all workers are busy then the task gets queued until there is room.
+
 ## install
 
 ```
@@ -13,64 +15,33 @@ npm install task.js
 import Task from 'task.js';
 ```
 
-
-or
-
-```
-# browser
-bower install task
-```
-
 or just grab the [cdnjs hosted version](https://cdnjs.com/libraries/task.js) directly
-
-## important
-
-Before using this module I want to expose the current performance issues
-
-- Node.js
-
-	- When using task.js in node with very large messages it can be very slow, this is due to the fact that node is copying all the message data.
-
-- Clientside
-	- When using task.js in a browser that doesn't support transferables (or you don't use them properly) then you will notice a slow down when passing massive array buffers
-
-Rule of thumb in node keep your object size under 150kb, and in the clientside version you can go crazy and send 40MB array buffers if transferables are supported.
 
 ## usage
 
 ```javascript
+let task = new Task({/* options */});
 
-let powTask = task.wrap(number => {
-	// this gets ran inside of a worker
-	return Math.pow(number, 2);
-});
-
-// promises
-conssole.log(await powTask(2));
+await task.run(
+	number => Math.pow(number, 2),
+	2
+); // returns 4
 ```
 
-## task.defaults (optional)
+## options
 
-You can override the defaults like this
+- **debug = false** *[Boolean]* enables verbose event logging
+- **logger = console.log** *[Function]* allows you to override logging, or handle the events in a custom manner
+- **workerType = undefined** *[String]* allows you to override the worker type, currently is only useful in node.js with `worker_threads`, or `fork_worker` 
+- **warmStart = true** *[Boolean]* creates all workers before running tasks
+- **maxWorkers = 1** *[Integer]* you can use `os.cpus().length` or `navigator.hardwareConcurrency` to obtain the system core count (do not set this value higher than the amount of cores on the machine)
+- **workerTaskConcurrency = 1** *[Integer]* useful if you are running async tasks, it allow allow a worker to handle multiple tasks at the same time
+- **taskTimeout = 0** *[Integer]* useful when trying to prevent long running tasks from stalling. It will kill the offending working and recreate another one, and reissue its tasks to the pool.
+- **requires** *[Object]* key value require object like the following `{qs: 'querystring'}`, all keys would become globals. **This is only supported in Node.js!**
+- **globals = {}** *[Object]* sets global variables in all workers {foo: 'bar'}, would set `foo` to `'bar'`
+- **initialize = undefined** *[Function]* you can use `global.foo = 'bar'` within this function to 
 
-```javascript
-// overriding defaults (optional)
-var myCustomTask = task.defaults({
-	debug: false, // extremely verbose, you should also set maxWorkers to 1
-	logger: console.log, // (default: console.log, this is useful if you want to parse all log messages)
-	workerType: 'worker_threads', // (default: null, this is currently only used to use node worker threads)
-	warmStart: false, // (default: false, if set to true all workers will be initialized instantly)
-	maxWorkers: 4, // (default: the system max, or 4 if it can't be resolved)
-	workerTaskConcurrency: 1, // (default: 1, this is only useful if you are only using async tasks/work)
-	taskTimeout: 0, // (default: 0, this is mainly useful when trying to prevent long running tasks from stalling. It will kill the offending working and recreate another one, and reissue its tasks to the pool.)
-	idleTimeout: 10000, // (default: false)
-	idleCheckInterval: 1000 // (default: null)
-	globals: {}, // refer to globals information
-	initialize: function (globals) {return globals;} // refer to globals information
-});
-```
-
-behind the scenes it's spreading your dynamic work across your cores
+**The `Function/String` you pass into `.run` or `.wrap` is ran inside of the workers context. So it will NOT have access to your main threads variable scope. If you would like to pass information into the task you need to use function arguments, or `task globals`.**
 
 ## task.wrap (Func|String)
 
@@ -116,37 +87,17 @@ task.terminate();
 You can initialize a task instance to have predefined data from your main thread, or generated within the worker.
 
 ```javascript
-var data = {one: 1};
+let data = {foo: 'foo'};
 
-task.defaults({
+let task = new Task({
 	globals: {
 		data: data,
-		two: 2,
-		three: 3
+		bar: 'bar'
 	}
-})
-
-task.wrap(function () {
-	console.log(globals.data);
-	console.log(globals.two);
-	console.log(globals.three);
 });
-```
 
-The above works great for small data, but with larger data this doesn't work. This is where you can use the initialize property in defaults.
-
-```javascript
-task.defaults({
-	globals: {
-		data: {one: 1}
-	},
-	initialize: function (globals) {
-		globals.bigData = [];
-		for (var i = 0; i < 100000; i++) {
-			globals.bigData.push(0);
-		}
-		return globals;
-	}
+await task.run(() => {
+	console.log(data.foo + bar);
 });
 ```
 
@@ -155,16 +106,91 @@ You can also use initialize to define common methods in the worker scope as well
 ```javascript
 task.defaults({
 	globals: {
-		data: {one: 1}
+		foo: 'foo',
+		bar: 'bar'
 	},
-	initialize: function (globals) {
-		globals.myFunc = function () {
-			...
+	initialize: () => {
+		global.fooBar = () => {
+			return foo + bar;
 		}
-
-		return globals;
 	}
+});
+
+await task.run(() => {
+	console.log(fooBar());
 });
 ```
 
 Keep in mind that it is ok to have a slow initialize, no work will actually be processed until there is a fully initialized worker.
+
+## async tasks
+
+Tasks can use `async`, and return promises
+
+```javascript
+let task = new Task({
+	requires: {
+		request: 'request-promise'
+	}
+});
+
+let workerRequest = task.wrap(
+	async options => {
+		let response = await request(options);
+		// do something CPU intensive with the response
+		return response;
+	}
+);
+
+console.log(await workerRequest({url: 'https://www.google.com'}));
+```
+
+## shared memory
+
+There are two ways to use shared memory 
+
+- **[SharedArrayBuffer](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/SharedArrayBuffer)** (only supported when using worker_threads in node, or web workers)
+- **[Transferables](https://developer.mozilla.org/en-US/docs/Web/API/Transferable)** These are buffer backed arrays
+
+### SharedArrayBuffer
+
+**supported in browser:web_workers, and node:worker_threads**
+
+When using this please make sure to use [Atomics](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Atomics), which is supposed in both the browser, and node.
+
+```javascript
+let sharedArray = new Uint8Array(new SharedArrayBuffer(2));
+
+await task.run(
+	sharedArray => Atomics.add(sharedArray, 0, 1),
+	sharedArray
+);
+
+sharedArray[1] = 2;
+
+console.log(sharedArray); // Uint8Array [ 1, 2 ]
+
+```
+
+### Transferable Arrays
+
+**supported in browser:web_workers, and node:worker_threads**
+
+To use transferables in task.js all you need to do is pass in `Task.transferables([...Array/Buffer])` as the methods last argument with references to the same transferable arrays you passed into the method. If you do not pass this last argument in then it will be treated like a standard array, and copied instead of transferred.
+
+```javascript
+let transferableArray = new Uint8Array(1);
+
+let result = await task.run(transferableArray => {
+	transferableArray[0]++;
+	return transferableArray;
+}, transferableArray, Task.transferables(transferableArray));
+```
+
+## Task.transferables(...Array/Buffer)
+
+You can pass in buffers, or buffer backed arrays. Behind the scenes task.js will pass the array buffer, according to the tranferables interface.
+
+```
+Task.transferables(transferableArray, transferableArray.buffer)
+```

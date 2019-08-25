@@ -1,12 +1,13 @@
 {
   "name": "task.js",
-  "version": "0.0.32",
+  "version": "0.1.0",
   "description": "Simplified interface for getting code to run on different cores (node.js, and web)",
-  "main": "index.js",
+  "main": "./dist/server/server",
+  "browser": "./dist/client/client",
   "scripts": {
     "test": "./node_modules/.bin/jasmine ./spec/server/index.js; DISABLE_DEBUG_TEST=1 node ./spec/client/jasmine",
     "test-dev": "./node_modules/.bin/jasmine ./spec/server/index.js; node ./spec/client/jasmine",
-    "build": "rm -rf ./dist; ./node_modules/.bin/webpack; ./node_modules/.bin/babel src -d dist/server; ./node_modules/.bin/babel src -d dist/client"
+    "build": "rm -rf ./dist; ./node_modules/.bin/babel src -d dist/server; ./node_modules/.bin/babel src -d dist/client; ./node_modules/.bin/webpack --config webpack.config.js;"
   },
   "author": "Chad Scira <chadvscira@gmail.com>",
   "license": "MIT",
@@ -27,9 +28,5 @@
     "uglifyjs-webpack-plugin": "^2.2.0",
     "webpack": "4.39.2",
     "webpack-cli": "3.3.7"
-  },
-  "browser": {
-    "os": false,
-    "child_process": false
   }
 }

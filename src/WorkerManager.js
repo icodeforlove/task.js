@@ -28,9 +28,8 @@ class WorkerManager {
 			} catch (error) {
 				throw new Error('Your current version, or configuration of Node.js does not support worker_threads.');
 			}
+
 			this._WorkerProxy = WorkerProxies.NodeWorkerThread;
-		} else if ($config.workerType == 'compatibility_worker') {
-			this._WorkerProxy = WorkerProxies.CompatibilityWorker;
 		} else {
 			this._WorkerProxy = WorkerProxies.DefaultWorkerProxy;
 		}
@@ -43,10 +42,10 @@ class WorkerManager {
 		}
 
 		this._workerTaskConcurrency = ($config.workerTaskConcurrency || 1) - 1;
-		this._maxWorkers = $config.maxWorkers || 4;
+		this._maxWorkers = $config.maxWorkers || 1;
 		this._idleTimeout = $config.idleTimeout === false ? false : $config.idleTimeout;
 		this._taskTimeout = $config.taskTimeout || 0;
-		this._idleCheckInterval = $config.idleCheckInterval || 1000;
+		this._idleCheckInterval = 1000;
 		this._warmStart = $config.warmStart || false;
 		this._globals = $config.globals;
 		this._globalsInitializationFunction = $config.initialize;
@@ -107,7 +106,6 @@ class WorkerManager {
 	}
 
 	_run (task) {
-		// console.log(task);
 		if (this._idleTimeout && typeof this._idleCheckIntervalID !== 'number') {
 			this._idleCheckIntervalID = setInterval(this._flushIdleWorkers, this._idleCheckInterval);
 		}

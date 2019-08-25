@@ -86,6 +86,1014 @@
 /************************************************************************/
 /******/ ({
 
+/***/ "./dist/client/GeneralWorker.js":
+/*!**************************************!*\
+  !*** ./dist/client/GeneralWorker.js ***!
+  \**************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+function _classCallCheck(instance, Constructor) {
+  if (!(instance instanceof Constructor)) {
+    throw new TypeError("Cannot call a class as a function");
+  }
+}
+
+function _defineProperties(target, props) {
+  for (var i = 0; i < props.length; i++) {
+    var descriptor = props[i];
+    descriptor.enumerable = descriptor.enumerable || false;
+    descriptor.configurable = true;
+    if ("value" in descriptor) descriptor.writable = true;
+    Object.defineProperty(target, descriptor.key, descriptor);
+  }
+}
+
+function _createClass(Constructor, protoProps, staticProps) {
+  if (protoProps) _defineProperties(Constructor.prototype, protoProps);
+  if (staticProps) _defineProperties(Constructor, staticProps);
+  return Constructor;
+}
+
+function _defineProperty(obj, key, value) {
+  if (key in obj) {
+    Object.defineProperty(obj, key, {
+      value: value,
+      enumerable: true,
+      configurable: true,
+      writable: true
+    });
+  } else {
+    obj[key] = value;
+  }
+
+  return obj;
+}
+
+var GeneralWorker =
+/*#__PURE__*/
+function () {
+  function GeneralWorker($config) {
+    var _this = this;
+
+    _classCallCheck(this, GeneralWorker);
+
+    _defineProperty(this, "handleWorkerExit", function () {
+      if (_this._debug) {
+        _this._log({
+          action: 'killed'
+        });
+      }
+
+      _this._onExitHandler(_this);
+    });
+
+    _defineProperty(this, "forceExit", function () {
+      _this._onExit();
+
+      _this._worker.kill();
+    });
+
+    _defineProperty(this, "handleWorkerMessage", function (message) {
+      var taskIndex = null;
+
+      _this.tasks.some(function (task, index) {
+        if (message.id === task.id) {
+          taskIndex = index;
+          return true;
+        }
+      });
+
+      if (taskIndex !== null) {
+        var task = _this.tasks[taskIndex];
+
+        if (message.error) {
+          if (_this._debug) {
+            _this._log({
+              taskId: task.id,
+              action: 'task_error',
+              message: "taskId(".concat(task.id, ") has thrown an error ").concat(message.error)
+            });
+          }
+
+          task.reject(new Error("task.js: ".concat(message.error)));
+        } else {
+          if (_this._debug) {
+            _this._log({
+              taskId: task.id,
+              action: 'task_completed',
+              message: "taskId(".concat(task.id, ") has completed")
+            });
+          }
+
+          task.resolve(message.result);
+        }
+
+        _this._onTaskComplete(_this);
+
+        _this.tasks.splice(taskIndex, 1);
+      }
+    });
+
+    this.id = $config.id;
+    this.managerId = $config.managerId;
+    this._debug = $config.debug;
+    this._logger = $config.logger;
+    this.tasks = [];
+    this.lastTaskTimestamp = null;
+    this._onTaskComplete = $config.onTaskComplete;
+    this._onExitHandler = $config.onExit;
+  }
+
+  _createClass(GeneralWorker, [{
+    key: "_log",
+    value: function _log(data) {
+      var event = {
+        source: 'worker',
+        managerId: this.managerId,
+        workerId: this.id
+      };
+      Object.keys(data).forEach(function (key) {
+        event[key] = data[key];
+      });
+
+      if (!event.message) {
+        event.message = event.action;
+      }
+
+      this._logger(event);
+    }
+  }, {
+    key: "run",
+    value: function run($options) {
+      this.lastTaskTimestamp = new Date();
+      var task = {
+        id: $options.id,
+        startTime: new Date(),
+        resolve: $options.resolve,
+        reject: $options.reject,
+        $options: $options
+      };
+      this.tasks.push(task);
+      var message = {
+        id: task.id,
+        func: String($options["function"])
+      }; // because of transferables (we want to keep this object flat)
+
+      Object.keys($options.arguments).forEach(function (key, index) {
+        message['argument' + index] = $options.arguments[index];
+      });
+      this.postMessage(message, $options.transferables);
+    }
+  }, {
+    key: "_purgeTasks",
+    value: function _purgeTasks(reason) {
+      this.tasks.forEach(function (task) {
+        task.reject(reason);
+      });
+      this.tasks = [];
+    }
+  }]);
+
+  return GeneralWorker;
+}();
+
+module.exports = GeneralWorker;
+
+/***/ }),
+
+/***/ "./dist/client/WorkerManager.js":
+/*!**************************************!*\
+  !*** ./dist/client/WorkerManager.js ***!
+  \**************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+function _typeof2(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof2 = function _typeof2(obj) { return typeof obj; }; } else { _typeof2 = function _typeof2(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof2(obj); }
+
+function _typeof(obj) {
+  if (typeof Symbol === "function" && _typeof2(Symbol.iterator) === "symbol") {
+    _typeof = function _typeof(obj) {
+      return _typeof2(obj);
+    };
+  } else {
+    _typeof = function _typeof(obj) {
+      return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : _typeof2(obj);
+    };
+  }
+
+  return _typeof(obj);
+}
+
+function _defineProperty(obj, key, value) {
+  if (key in obj) {
+    Object.defineProperty(obj, key, {
+      value: value,
+      enumerable: true,
+      configurable: true,
+      writable: true
+    });
+  } else {
+    obj[key] = value;
+  }
+
+  return obj;
+}
+
+function _classCallCheck(instance, Constructor) {
+  if (!(instance instanceof Constructor)) {
+    throw new TypeError("Cannot call a class as a function");
+  }
+}
+
+function _defineProperties(target, props) {
+  for (var i = 0; i < props.length; i++) {
+    var descriptor = props[i];
+    descriptor.enumerable = descriptor.enumerable || false;
+    descriptor.configurable = true;
+    if ("value" in descriptor) descriptor.writable = true;
+    Object.defineProperty(target, descriptor.key, descriptor);
+  }
+}
+
+function _createClass(Constructor, protoProps, staticProps) {
+  if (protoProps) _defineProperties(Constructor.prototype, protoProps);
+  if (staticProps) _defineProperties(Constructor, staticProps);
+  return Constructor;
+}
+
+var Transferables =
+/*#__PURE__*/
+function () {
+  function Transferables(transferables) {
+    _classCallCheck(this, Transferables);
+
+    this.transferables = transferables.map(function (transferable) {
+      if (!(transferable instanceof ArrayBuffer) && transferable && transferable.buffer instanceof ArrayBuffer) {
+        return transferable.buffer;
+      } else if (transferable instanceof ArrayBuffer) {
+        return transferable;
+      } else {
+        throw new Error('Task.js: invalid transferable argument (ensure its a buffer backed array, or a buffer)');
+      }
+    });
+  }
+
+  _createClass(Transferables, [{
+    key: "toArray",
+    value: function toArray() {
+      return this.transferables;
+    }
+  }]);
+
+  return Transferables;
+}();
+
+var WorkerManager =
+/*#__PURE__*/
+function () {
+  function WorkerManager($config, WorkerProxies) {
+    var _this = this;
+
+    _classCallCheck(this, WorkerManager);
+
+    _defineProperty(this, "_next", function () {
+      if (_this._taskTimeout) {
+        _this._reissueTasksInTimedoutWorkers();
+      }
+
+      if (!_this._queue.length) {
+        return;
+      }
+
+      var worker = _this._getWorker();
+
+      if (!worker) {
+        setTimeout(_this._next, 0);
+        return;
+      }
+
+      var task = _this._queue.shift();
+
+      if (_this._debug) {
+        _this._log({
+          action: 'send_task_to_worker',
+          taskId: task.id,
+          workerId: worker.id,
+          message: "sending taskId(".concat(task.id, ") to workerId(").concat(worker.id, ")")
+        });
+      }
+
+      worker.run(task);
+    });
+
+    _defineProperty(this, "_onWorkerTaskComplete", function () {
+      _this._next();
+    });
+
+    _defineProperty(this, "_onWorkerExit", function (worker) {
+      if (_this._debug) {
+        _this._log({
+          action: 'worker_died',
+          workerId: worker.id,
+          message: "worker died, reissuing tasks"
+        });
+      } // purge dead worker from pool
+
+
+      _this._workers = _this._workers.filter(function (item) {
+        return item != worker;
+      }); // add work back to queue
+
+      worker.tasks.forEach(function (task) {
+        _this._queue.push(task.$options);
+      }); // run tick
+
+      _this._next();
+    });
+
+    $config = $config || {};
+    this.id = ++WorkerManager.managerCount;
+
+    if ($config.workerType === 'worker_threads') {
+      try {
+        __webpack_require__(!(function webpackMissingModule() { var e = new Error("Cannot find module 'worker_threads'"); e.code = 'MODULE_NOT_FOUND'; throw e; }()));
+      } catch (error) {
+        throw new Error('Your current version, or configuration of Node.js does not support worker_threads.');
+      }
+
+      this._WorkerProxy = WorkerProxies.NodeWorkerThread;
+    } else {
+      this._WorkerProxy = WorkerProxies.DefaultWorkerProxy;
+    }
+
+    this._logger = $config.logger || console.log;
+    this._requires = $config.requires;
+
+    if (!($config.workerType === 'worker_threads' || $config.workerType === 'fork_worker') && this._requires) {
+      throw new Error('Task.js requires is not supported in a clientside environment.');
+    }
+
+    this._workerTaskConcurrency = ($config.workerTaskConcurrency || 1) - 1;
+    this._maxWorkers = $config.maxWorkers || 1;
+    this._idleTimeout = $config.idleTimeout === false ? false : $config.idleTimeout;
+    this._taskTimeout = $config.taskTimeout || 0;
+    this._idleCheckInterval = 1000;
+    this._warmStart = $config.warmStart || false;
+    this._globals = $config.globals;
+    this._globalsInitializationFunction = $config.initialize;
+    this._debug = $config.debug;
+
+    if (this._debug) {
+      this._log({
+        action: 'create_new_pool',
+        message: "creating new pool : ".concat(JSON.stringify($config)),
+        config: $config
+      });
+    }
+
+    this._workers = [];
+    this._workersInitializing = [];
+    this._queue = [];
+    this._onWorkerTaskComplete = this._onWorkerTaskComplete.bind(this);
+    this._flushIdleWorkers = this._flushIdleWorkers.bind(this);
+    this._totalWorkersCreated = 0;
+    this._lastTaskTimeoutCheck = new Date();
+
+    if (this._warmStart) {
+      if (this._debug) {
+        this._log({
+          action: 'warmstart',
+          message: 'warm starting workers'
+        });
+      }
+
+      for (var i = 0; i < this._maxWorkers; i++) {
+        this._createWorker();
+      }
+    }
+  }
+
+  _createClass(WorkerManager, [{
+    key: "_log",
+    value: function _log(data) {
+      var event = {
+        source: 'manager',
+        managerId: this.id
+      };
+      Object.keys(data).forEach(function (key) {
+        event[key] = data[key];
+      });
+
+      if (!event.message) {
+        event.message = event.action;
+      }
+
+      this._logger(event);
+    }
+  }, {
+    key: "getActiveWorkerCount",
+    value: function getActiveWorkerCount() {
+      return this._workersInitializing.length + this._workers.length;
+    }
+  }, {
+    key: "_run",
+    value: function _run(task) {
+      if (this._idleTimeout && typeof this._idleCheckIntervalID !== 'number') {
+        this._idleCheckIntervalID = setInterval(this._flushIdleWorkers, this._idleCheckInterval);
+      }
+
+      if (!task.arguments || typeof task.arguments.length === 'undefined') {
+        throw new Error('task.js: "arguments" is required property, and it must be an array/array-like');
+      }
+
+      if (!task["function"] && (typeof task["function"] !== 'function' || typeof task["function"] !== 'string')) {
+        throw new Error('task.js: "function" is required property, and it must be a string or a function');
+      }
+
+      if (_typeof(task.arguments) === 'object') {
+        task.arguments = Array.prototype.slice.call(task.arguments);
+      }
+
+      task.id = ++WorkerManager.taskCount;
+
+      if (this._debug) {
+        this._log({
+          action: 'add_to_queue',
+          taskId: task.id,
+          message: "added taskId(".concat(task.id, ") to the queue")
+        });
+      }
+
+      return new Promise(function (resolve, reject) {
+        task.resolve = resolve;
+        task.reject = reject;
+
+        this._queue.push(task);
+
+        this._next();
+      }.bind(this));
+    }
+  }, {
+    key: "_runOnWorker",
+    value: function _runOnWorker(worker, args, func) {
+      return new Promise(function (resolve, reject) {
+        worker.run({
+          id: ++WorkerManager.taskCount,
+          arguments: args,
+          "function": func,
+          resolve: resolve,
+          reject: reject
+        });
+      });
+    }
+  }, {
+    key: "run",
+    value: function run(func) {
+      var wrappedFunc = this.wrap(func);
+
+      for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+        args[_key - 1] = arguments[_key];
+      }
+
+      return wrappedFunc.apply(void 0, args);
+    }
+  }, {
+    key: "wrap",
+    value: function wrap(func) {
+      return function () {
+        var args = Array.from(arguments),
+            transferables = null,
+            lastArg = args.slice(-1)[0];
+
+        if (lastArg instanceof Transferables) {
+          transferables = lastArg.toArray();
+          args = args.slice(0, -1);
+        }
+
+        return this._run({
+          arguments: args,
+          transferables: transferables,
+          "function": func
+        });
+      }.bind(this);
+    }
+  }, {
+    key: "terminate",
+    value: function terminate() {
+      if (this._debug) {
+        this._log({
+          action: 'terminated',
+          message: 'terminated'
+        });
+      } // kill idle timeout (if it exists)
+
+
+      if (this._idleTimeout && typeof this._idleCheckIntervalID == 'number') {
+        clearInterval(this._idleCheckIntervalID);
+        this._idleCheckIntervalID = null;
+      } // terminate all existing workers
+
+
+      this._workers.forEach(function (worker) {
+        worker.terminate();
+      }); // flush worker pool
+
+
+      this._workers = [];
+    }
+  }, {
+    key: "_reissueTasksInTimedoutWorkers",
+    value: function _reissueTasksInTimedoutWorkers() {
+      var _this2 = this;
+
+      if (new Date() - this._lastTaskTimeoutCheck < 5000) {
+        return;
+      }
+
+      this._lastTaskTimeoutCheck = new Date();
+
+      this._workers.forEach(function (worker) {
+        worker.tasks.some(function (task) {
+          if (new Date() - task.startTime >= _this2._taskTimeout) {
+            worker.forceExit();
+            return true;
+          }
+        });
+      });
+    }
+  }, {
+    key: "_flushIdleWorkers",
+    value: function _flushIdleWorkers() {
+      if (this._debug) {
+        this._log({
+          action: 'flush_idle_workers',
+          message: "flushing idle workers"
+        });
+      }
+
+      this._workers = this._workers.filter(function (worker) {
+        if (worker.tasks.length === 0 && new Date() - worker.lastTaskTimestamp > this._idleTimeout) {
+          worker.terminate();
+          return false;
+        } else {
+          return true;
+        }
+      }, this);
+    }
+  }, {
+    key: "_getWorker",
+    value: function _getWorker() {
+      var _this3 = this;
+
+      var idleWorkers = this._workers.filter(function (worker) {
+        return worker.tasks.length <= _this3._workerTaskConcurrency;
+      }).sort(function (a, b) {
+        return a.tasks.length - b.tasks.length;
+      });
+
+      if (idleWorkers.length) {
+        return idleWorkers[0];
+      } else if (this._workers.length < this._maxWorkers && this._workersInitializing.length === 0) {
+        return this._createWorker();
+      } else {
+        return null;
+      }
+    }
+  }, {
+    key: "_createWorker",
+    value: function _createWorker() {
+      var workerId = ++this._totalWorkersCreated;
+      var worker = new this._WorkerProxy({
+        debug: this._debug,
+        logger: this._logger,
+        id: workerId,
+        managerId: this.id,
+        onTaskComplete: this._onWorkerTaskComplete,
+        onExit: this._onWorkerExit
+      });
+
+      if (this._globalsInitializationFunction || this._globals || this._requires) {
+        if (this._debug) {
+          this._log({
+            action: 'run_global_initialize',
+            message: "running global initialization code"
+          });
+        }
+
+        var globalsInitializationFunction = "function (_globals) {\n\t\t\t\tlet requires = ".concat(JSON.stringify(this._requires || {}), ";\n\t\t\t\tObject.keys(requires).forEach(key => {\n\t\t\t\t\tglobal[key] = require(requires[key]);\n\t\t\t\t});\n\n\t\t\t\tif (typeof _globals != 'undefined') {\n\t\t\t\t\tObject.keys(_globals).forEach(key => {\n\t\t\t\t\t\tglobal[key] = _globals[key];\n\t\t\t\t\t});\n\t\t\t\t}\n\n\t\t\t\t(").concat((this._globalsInitializationFunction || function () {}).toString(), ")();\n\t\t\t}").trim();
+
+        this._workersInitializing.push(worker);
+
+        this._runOnWorker(worker, [this._globals || {}], globalsInitializationFunction).then(function () {
+          this._workersInitializing = this._workersInitializing.filter(function (item) {
+            return item != worker;
+          });
+
+          this._workers.push(worker);
+        }.bind(this));
+
+        return null;
+      } else {
+        this._workers.push(worker);
+
+        return worker;
+      }
+    }
+  }], [{
+    key: "transferables",
+    value: function transferables() {
+      for (var _len2 = arguments.length, args = new Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+        args[_key2] = arguments[_key2];
+      }
+
+      return new Transferables(args);
+    }
+  }]);
+
+  return WorkerManager;
+}();
+
+_defineProperty(WorkerManager, "managerCount", 0);
+
+_defineProperty(WorkerManager, "taskCount", 0);
+
+module.exports = WorkerManager;
+
+/***/ }),
+
+/***/ "./dist/client/client/WebWorker.js":
+/*!*****************************************!*\
+  !*** ./dist/client/client/WebWorker.js ***!
+  \*****************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+function _typeof2(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof2 = function _typeof2(obj) { return typeof obj; }; } else { _typeof2 = function _typeof2(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof2(obj); }
+
+function _typeof(obj) {
+  if (typeof Symbol === "function" && _typeof2(Symbol.iterator) === "symbol") {
+    _typeof = function _typeof(obj) {
+      return _typeof2(obj);
+    };
+  } else {
+    _typeof = function _typeof(obj) {
+      return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : _typeof2(obj);
+    };
+  }
+
+  return _typeof(obj);
+}
+
+function _classCallCheck(instance, Constructor) {
+  if (!(instance instanceof Constructor)) {
+    throw new TypeError("Cannot call a class as a function");
+  }
+}
+
+function _possibleConstructorReturn(self, call) {
+  if (call && (_typeof(call) === "object" || typeof call === "function")) {
+    return call;
+  }
+
+  return _assertThisInitialized(self);
+}
+
+function _getPrototypeOf(o) {
+  _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) {
+    return o.__proto__ || Object.getPrototypeOf(o);
+  };
+  return _getPrototypeOf(o);
+}
+
+function _assertThisInitialized(self) {
+  if (self === void 0) {
+    throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
+  }
+
+  return self;
+}
+
+function _inherits(subClass, superClass) {
+  if (typeof superClass !== "function" && superClass !== null) {
+    throw new TypeError("Super expression must either be null or a function");
+  }
+
+  subClass.prototype = Object.create(superClass && superClass.prototype, {
+    constructor: {
+      value: subClass,
+      writable: true,
+      configurable: true
+    }
+  });
+  if (superClass) _setPrototypeOf(subClass, superClass);
+}
+
+function _setPrototypeOf(o, p) {
+  _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) {
+    o.__proto__ = p;
+    return o;
+  };
+
+  return _setPrototypeOf(o, p);
+}
+
+function _defineProperty(obj, key, value) {
+  if (key in obj) {
+    Object.defineProperty(obj, key, {
+      value: value,
+      enumerable: true,
+      configurable: true,
+      writable: true
+    });
+  } else {
+    obj[key] = value;
+  }
+
+  return obj;
+}
+
+var functionToObjectURL = __webpack_require__(/*! ./functionToObjectURL */ "./dist/client/client/functionToObjectURL.js");
+
+var GeneralWorker = __webpack_require__(/*! ../GeneralWorker */ "./dist/client/GeneralWorker.js");
+
+var WebWorker =
+/*#__PURE__*/
+function (_GeneralWorker) {
+  _inherits(WebWorker, _GeneralWorker);
+
+  function WebWorker($config) {
+    var _this;
+
+    _classCallCheck(this, WebWorker);
+
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(WebWorker).apply(this, arguments));
+
+    _defineProperty(_assertThisInitialized(_this), "WORKER_SOURCE", "function () {\n\t\tlet global = new Proxy(\n\t\t  {},\n\t\t  {\n\t\t    set: (obj, prop, newval) => (self[prop] = newval)\n\t\t  }\n\t\t);\n\n\t\tonmessage = function (event) {\n\t\t\tvar message = event.data;\n\n\t\t\tvar args = Object.keys(message).filter(function (key) {\n\t\t\t\treturn key.match(/^argument/);\n\t\t\t}).sort(function (a, b) {\n\t\t\t\treturn parseInt(a.slice(8), 10) - parseInt(b.slice(8), 10);\n\t\t\t}).map(function (key) {\n\t\t\t\treturn message[key];\n\t\t\t});\n\n\t\t\ttry {\n\t\t\t\tvar result = eval('(' + message.func + ')').apply(null, args);\n\n\t\t\t\tif (typeof Promise != 'undefined' && result instanceof Promise) {\n\t\t\t\t\tresult.then(function (result) {\n\t\t\t\t\t\tpostMessage({id: message.id, result: result});\n\t\t\t\t\t}).catch(function (error) {\n\t\t\t\t\t\tpostMessage({id: message.id, error: error.stack});\n\t\t\t\t\t});\n\t\t\t\t} else {\n\t\t\t\t\tpostMessage({id: message.id, result: result});\n\t\t\t\t}\n\t\t\t} catch (error) {\n\t\t\t\tpostMessage({id: message.id, error: error.stack});\n\t\t\t}\n\t\t}\n\t}");
+
+    _defineProperty(_assertThisInitialized(_this), "_onMessage", function (event) {
+      var message = event.data;
+
+      _this.handleWorkerMessage(message);
+    });
+
+    _defineProperty(_assertThisInitialized(_this), "postMessage", function (message, transferables) {
+      if (_this._debug) {
+        _this._log({
+          taskId: message.id,
+          action: 'send_task_to_actual_worker',
+          message: "sending taskId(".concat(message.id, ") to worker process")
+        });
+      }
+
+      _this._worker.postMessage(message, transferables);
+    });
+
+    _defineProperty(_assertThisInitialized(_this), "terminate", function () {
+      if (_this._debug) {
+        _this._log({
+          message: 'terminated'
+        });
+      }
+
+      _this._worker.terminate();
+    });
+
+    _this._worker = new Worker(functionToObjectURL(_this.WORKER_SOURCE));
+
+    _this._worker.addEventListener('message', _this._onMessage);
+
+    if (_this._debug) {
+      _this._log({
+        action: 'initialized'
+      });
+    }
+
+    return _this;
+  }
+
+  return WebWorker;
+}(GeneralWorker);
+
+module.exports = WebWorker;
+
+/***/ }),
+
+/***/ "./dist/client/client/functionToObjectURL.js":
+/*!***************************************************!*\
+  !*** ./dist/client/client/functionToObjectURL.js ***!
+  \***************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+module.exports = function functionToObjectURL(func) {
+  var blob,
+      stringFunc = func.toString();
+  stringFunc = stringFunc.substring(stringFunc.indexOf('{') + 1, stringFunc.lastIndexOf('}'));
+
+  try {
+    blob = new Blob([stringFunc], {
+      'type': 'text/javascript'
+    });
+  } catch (error) {
+    // Backwards-compatibility
+    window.BlobBuilder = window.BlobBuilder || window.WebKitBlobBuilder || window.MozBlobBuilder;
+    blob = new BlobBuilder();
+    blob.append(stringFunc);
+    blob = blob.getBlob();
+  }
+
+  return (window.URL || window.webkitURL).createObjectURL(blob);
+};
+
+/***/ }),
+
+/***/ "./dist/client/client/index.js":
+/*!*************************************!*\
+  !*** ./dist/client/client/index.js ***!
+  \*************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+function _typeof2(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof2 = function _typeof2(obj) { return typeof obj; }; } else { _typeof2 = function _typeof2(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof2(obj); }
+
+function _typeof(obj) {
+  if (typeof Symbol === "function" && _typeof2(Symbol.iterator) === "symbol") {
+    _typeof = function _typeof(obj) {
+      return _typeof2(obj);
+    };
+  } else {
+    _typeof = function _typeof(obj) {
+      return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : _typeof2(obj);
+    };
+  }
+
+  return _typeof(obj);
+}
+
+function _classCallCheck(instance, Constructor) {
+  if (!(instance instanceof Constructor)) {
+    throw new TypeError("Cannot call a class as a function");
+  }
+}
+
+function _possibleConstructorReturn(self, call) {
+  if (call && (_typeof(call) === "object" || typeof call === "function")) {
+    return call;
+  }
+
+  return _assertThisInitialized(self);
+}
+
+function _assertThisInitialized(self) {
+  if (self === void 0) {
+    throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
+  }
+
+  return self;
+}
+
+function _getPrototypeOf(o) {
+  _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) {
+    return o.__proto__ || Object.getPrototypeOf(o);
+  };
+  return _getPrototypeOf(o);
+}
+
+function _inherits(subClass, superClass) {
+  if (typeof superClass !== "function" && superClass !== null) {
+    throw new TypeError("Super expression must either be null or a function");
+  }
+
+  subClass.prototype = Object.create(superClass && superClass.prototype, {
+    constructor: {
+      value: subClass,
+      writable: true,
+      configurable: true
+    }
+  });
+  if (superClass) _setPrototypeOf(subClass, superClass);
+}
+
+function _setPrototypeOf(o, p) {
+  _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) {
+    o.__proto__ = p;
+    return o;
+  };
+
+  return _setPrototypeOf(o, p);
+}
+
+var isModern = __webpack_require__(/*! ./isModern */ "./dist/client/client/isModern.js");
+
+var WorkerManager = __webpack_require__(/*! ../WorkerManager */ "./dist/client/WorkerManager.js");
+
+var generateTaskFactoryMethod = __webpack_require__(/*! ../generateTaskFactoryMethod */ "./dist/client/generateTaskFactoryMethod.js");
+
+var WorkerProxies;
+
+if (isModern()) {
+  WorkerProxies = {
+    DefaultWorkerProxy: __webpack_require__(/*! ./WebWorker */ "./dist/client/client/WebWorker.js")
+  };
+}
+
+module.exports =
+/*#__PURE__*/
+function (_WorkerManager) {
+  _inherits(ClientWorkerManager, _WorkerManager);
+
+  function ClientWorkerManager() {
+    var $config = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+
+    _classCallCheck(this, ClientWorkerManager);
+
+    if (!WorkerProxies) {
+      throw new Error('The browser does not support Workers');
+    }
+
+    var config = {
+      workerType: 'web_worker'
+    };
+    Object.keys($config).forEach(function (key) {
+      return config[key] = $config[key];
+    });
+    return _possibleConstructorReturn(this, _getPrototypeOf(ClientWorkerManager).call(this, config, WorkerProxies));
+  }
+
+  return ClientWorkerManager;
+}(WorkerManager);
+
+/***/ }),
+
+/***/ "./dist/client/client/isModern.js":
+/*!****************************************!*\
+  !*** ./dist/client/client/isModern.js ***!
+  \****************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var functionToObjectURL = __webpack_require__(/*! ./functionToObjectURL */ "./dist/client/client/functionToObjectURL.js");
+
+module.exports = function isModern() {
+  if (typeof Worker != 'undefined' && (window.URL || window.webkitURL)) {
+    try {
+      var worker = new Worker(functionToObjectURL(function () {}));
+      worker.terminate();
+      return true;
+    } catch (error) {}
+  }
+
+  return false;
+};
+
+/***/ }),
+
+/***/ "./dist/client/generateTaskFactoryMethod.js":
+/*!**************************************************!*\
+  !*** ./dist/client/generateTaskFactoryMethod.js ***!
+  \**************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+module.exports = function generateTaskFactoryMethod(defaults, WorkerProxy, WorkerManager) {
+  return function ($config, WorkerProxyOverride) {
+    var config = {}; // clone defaults
+
+    Object.keys(defaults).forEach(function (key) {
+      return config[key] = defaults[key];
+    }); // apply user settings
+
+    Object.keys($config).forEach(function (key) {
+      return config[key] = $config[key];
+    });
+    return new WorkerManager(config, WorkerProxyOverride || WorkerProxy);
+  };
+};
+
+/***/ }),
+
 /***/ "./node_modules/babel-polyfill/lib/index.js":
 /*!**************************************************!*\
   !*** ./node_modules/babel-polyfill/lib/index.js ***!
@@ -18925,7 +19933,9 @@ __webpack_require__(/*! babel-polyfill */ "./node_modules/babel-polyfill/lib/ind
 
 window.Promise = __webpack_require__(/*! bluebird */ "./node_modules/bluebird/js/browser/bluebird.js");
 
-var Task = __webpack_require__(/*! ../../src/client/index.js */ "./src/client/index.js");
+var Task = __webpack_require__(/*! ../../. */ "./dist/client/client/index.js");
+
+console.log(Task);
 
 (function () {
   jasmine.getEnv().addReporter(new function () {
@@ -18956,8 +19966,14 @@ var Task = __webpack_require__(/*! ../../src/client/index.js */ "./src/client/in
   }());
 })();
 
-describe('General Tests', __webpack_require__(/*! ./spec/client/../general.js */ "./spec/general.js")(Task, Promise, {
-  workerType: 'compatibility_worker'
+jasmine.DEFAULT_TIMEOUT_INTERVAL = 12000; // describe('Browser Compatibility Tests', require(`${__dirname}/../general.js`)(
+// 	Task,
+// 	Promise,
+// 	{workerType: 'compatibility_worker'}
+// ));
+
+describe('Browser Web Worker Tests', __webpack_require__(/*! ./spec/client/../general.js */ "./spec/general.js")(Task, Promise, {
+  workerType: 'web_worker'
 }));
 
 /***/ }),
@@ -18967,7 +19983,11 @@ describe('General Tests', __webpack_require__(/*! ./spec/client/../general.js */
   !*** ./spec/general.js ***!
   \*************************/
 /*! no static exports found */
-/***/ (function(module, exports) {
+/***/ (function(module, exports, __webpack_require__) {
+
+/* WEBPACK VAR INJECTION */(function(global) {function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { Promise.resolve(value).then(_next, _throw); } }
+
+function _asyncToGenerator(fn) { return function () { var self = this, args = arguments; return new Promise(function (resolve, reject) { var gen = fn.apply(self, args); function _next(value) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value); } function _throw(err) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err); } _next(undefined); }); }; }
 
 module.exports = function (Task, Promise) {
   var _ref = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {},
@@ -18979,43 +19999,189 @@ module.exports = function (Task, Promise) {
       var defaults = {
         maxWorkers: 3,
         idleTimeout: 5000,
-        idleCheckInterval: 11000,
         workerType: workerType
       };
       var customTask = new Task(defaults);
       expect(customTask._maxWorkers).toBe(defaults.maxWorkers);
       expect(customTask._idleTimeout).toBe(defaults.idleTimeout);
-      expect(customTask._idleCheckInterval).toBe(defaults.idleCheckInterval);
       customTask.terminate();
     });
     it('can run a single task', function (done) {
-      task.run({
-        arguments: [2],
-        "function": function _function(number) {
-          return Math.pow(number, 2);
-        }
-      }).then(function (squaredNumber) {
+      task.run(function (number) {
+        return Math.pow(number, 2);
+      }, 2).then(function (squaredNumber) {
         expect(squaredNumber).toBe(4);
         done();
       });
     });
 
+    if (workerType === 'worker_threads' || workerType === 'web_worker') {
+      it('can use worker threads', function (done) {
+        var customTask = new Task({
+          maxWorkers: 1,
+          workerType: workerType
+        });
+        customTask.run(function (number) {
+          return Math.pow(number, 2);
+        }, 2).then(function (squaredNumber) {
+          expect(squaredNumber).toBe(4);
+          done();
+        }).then(
+        /*#__PURE__*/
+        _asyncToGenerator(
+        /*#__PURE__*/
+        regeneratorRuntime.mark(function _callee() {
+          return regeneratorRuntime.wrap(function _callee$(_context) {
+            while (1) {
+              switch (_context.prev = _context.next) {
+                case 0:
+                  _context.next = 2;
+                  return Promise.delay(0);
+
+                case 2:
+                  customTask.terminate();
+
+                case 3:
+                case "end":
+                  return _context.stop();
+              }
+            }
+          }, _callee);
+        })));
+      });
+      it('can use SharedArrayBuffers', function (done) {
+        var customTask = new Task({
+          maxWorkers: 1,
+          workerType: workerType
+        });
+        var sharedarraybufferUint16Array = new Uint16Array(new SharedArrayBuffer(128));
+        sharedarraybufferUint16Array[0] = 100;
+        customTask.run(function (sharedarraybufferUint16Array) {
+          sharedarraybufferUint16Array[0] = 42;
+        }, sharedarraybufferUint16Array).then(function () {
+          expect(sharedarraybufferUint16Array[0]).toBe(42);
+          done();
+        }).then(
+        /*#__PURE__*/
+        _asyncToGenerator(
+        /*#__PURE__*/
+        regeneratorRuntime.mark(function _callee2() {
+          return regeneratorRuntime.wrap(function _callee2$(_context2) {
+            while (1) {
+              switch (_context2.prev = _context2.next) {
+                case 0:
+                  _context2.next = 2;
+                  return Promise.delay(0);
+
+                case 2:
+                  customTask.terminate();
+
+                case 3:
+                case "end":
+                  return _context2.stop();
+              }
+            }
+          }, _callee2);
+        })));
+      });
+      it('can use transferables with wrap', function (done) {
+        var customTask = new Task({
+          workerType: workerType,
+          warmStart: true,
+          maxWorkers: 1,
+          workerTaskConcurrency: 1
+        });
+        var transferableUint16Array = new Uint16Array(128);
+        transferableUint16Array[0] = 100;
+        var transferableTask = customTask.wrap(function (transferableUint16Array) {
+          transferableUint16Array[0] = 42;
+          return transferableUint16Array.buffer;
+        });
+        transferableTask(transferableUint16Array, Task.transferables(transferableUint16Array)).then(function (buffer) {
+          var transferredUint16Array = new Uint16Array(buffer);
+          expect(transferableUint16Array.length).toBe(0);
+          expect(transferredUint16Array[0]).toBe(42);
+          expect(transferredUint16Array.length).toBe(128);
+          done();
+        }).then(
+        /*#__PURE__*/
+        _asyncToGenerator(
+        /*#__PURE__*/
+        regeneratorRuntime.mark(function _callee3() {
+          return regeneratorRuntime.wrap(function _callee3$(_context3) {
+            while (1) {
+              switch (_context3.prev = _context3.next) {
+                case 0:
+                  _context3.next = 2;
+                  return Promise.delay(0);
+
+                case 2:
+                  customTask.terminate();
+
+                case 3:
+                case "end":
+                  return _context3.stop();
+              }
+            }
+          }, _callee3);
+        })));
+      });
+      it('can use transferables with run', function (done) {
+        var customTask = new Task({
+          workerType: workerType,
+          warmStart: true,
+          maxWorkers: 1,
+          workerTaskConcurrency: 1
+        });
+        var transferableUint16Array = new Uint16Array(128);
+        transferableUint16Array[0] = 100;
+        customTask.run(function (transferableUint16Array) {
+          transferableUint16Array[0] = 42;
+          return transferableUint16Array.buffer;
+        }, transferableUint16Array, Task.transferables(transferableUint16Array)).then(function (buffer) {
+          var transferredUint16Array = new Uint16Array(buffer);
+          expect(transferableUint16Array.length).toBe(0);
+          expect(transferredUint16Array[0]).toBe(42);
+          expect(transferredUint16Array.length).toBe(128);
+          done();
+        }).then(
+        /*#__PURE__*/
+        _asyncToGenerator(
+        /*#__PURE__*/
+        regeneratorRuntime.mark(function _callee4() {
+          return regeneratorRuntime.wrap(function _callee4$(_context4) {
+            while (1) {
+              switch (_context4.prev = _context4.next) {
+                case 0:
+                  _context4.next = 2;
+                  return Promise.delay(0);
+
+                case 2:
+                  customTask.terminate();
+
+                case 3:
+                case "end":
+                  return _context4.stop();
+              }
+            }
+          }, _callee4);
+        })));
+      });
+    }
+
     if (typeof Promise != 'undefined') {
       it('can run a single async task', function (done) {
-        task.run({
-          arguments: [2],
-          "function": function _function(number) {
-            if (typeof Promise !== 'undefined') {
-              return new Promise(function (resolve, reject) {
-                setTimeout(function () {
-                  resolve(Math.pow(number, 2));
-                }, 10);
-              });
-            } else {
-              return Math.pow(number, 2);
-            }
+        task.run(function (number) {
+          if (typeof Promise !== 'undefined') {
+            return new Promise(function (resolve, reject) {
+              setTimeout(function () {
+                resolve(Math.pow(number, 2));
+              }, 10);
+            });
+          } else {
+            return Math.pow(number, 2);
           }
-        }).then(function (squaredNumber) {
+        }, 2).then(function (squaredNumber) {
           expect(squaredNumber).toBe(4);
           done();
         });
@@ -19024,12 +20190,9 @@ module.exports = function (Task, Promise) {
 
     it('can run many tasks with many workers', function (done) {
       function squareAsync() {
-        return task.run({
-          arguments: arguments,
-          "function": function _function(number) {
-            return Math.pow(number, 2);
-          }
-        });
+        return task.run.apply(task, [function (number) {
+          return Math.pow(number, 2);
+        }].concat(Array.prototype.slice.call(arguments)));
       }
 
       var numbers = [];
@@ -19050,12 +20213,9 @@ module.exports = function (Task, Promise) {
       });
 
       function squareAsync() {
-        return customTask.run({
-          arguments: arguments,
-          "function": function _function(number) {
-            return Math.pow(number, 2);
-          }
-        });
+        return customTask.run.apply(customTask, [function (number) {
+          return Math.pow(number, 2);
+        }].concat(Array.prototype.slice.call(arguments)));
       }
 
       var numbers = [];
@@ -19070,37 +20230,6 @@ module.exports = function (Task, Promise) {
         done();
       });
     });
-
-    if (workerType === 'compatibility_worker') {
-      it('can run many tasks with a compatibility worker', function (done) {
-        var customTask = new Task({
-          maxWorkers: 1,
-          workerType: workerType
-        });
-
-        function squareAsync() {
-          return customTask.run({
-            arguments: arguments,
-            "function": function _function(number) {
-              return Math.pow(number, 2);
-            }
-          });
-        }
-
-        var numbers = [];
-
-        for (var i = 0; i < 10; i++) {
-          numbers.push(i);
-        }
-
-        Promise.map(numbers, squareAsync).then(function (numbers) {
-          expect(numbers).toEqual([0, 1, 4, 9, 16, 25, 36, 49, 64, 81]);
-          customTask.terminate();
-          done();
-        });
-      });
-    }
-
     it('can use wrap', function (done) {
       function pow(number) {
         return Math.pow(number, 2);
@@ -19143,7 +20272,7 @@ module.exports = function (Task, Promise) {
         workerType: workerType
       });
       customTask.wrap(function () {
-        return globals.data;
+        return data;
       })().then(function (data) {
         expect(data).toEqual(1);
         customTask.terminate();
@@ -19175,17 +20304,17 @@ module.exports = function (Task, Promise) {
     });
     it('can use globals and initialize', function (done) {
       var customTask = new Task({
+        maxWorkers: 1,
         globals: {
           data: 1
         },
-        initialize: function initialize(globals) {
-          globals.data += 1;
-          return globals;
+        initialize: function initialize() {
+          global.data = data + 1;
         },
         workerType: workerType
       });
       customTask.wrap(function () {
-        return globals.data;
+        return data;
       })().then(function (data) {
         expect(data).toEqual(2);
         customTask.terminate();
@@ -19218,756 +20347,7 @@ module.exports = function (Task, Promise) {
     });
   };
 };
-
-/***/ }),
-
-/***/ "./src/GeneralWorker.js":
-/*!******************************!*\
-  !*** ./src/GeneralWorker.js ***!
-  \******************************/
-/*! no static exports found */
-/***/ (function(module, exports) {
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
-
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
-var GeneralWorker =
-/*#__PURE__*/
-function () {
-  function GeneralWorker($config) {
-    var _this = this;
-
-    _classCallCheck(this, GeneralWorker);
-
-    _defineProperty(this, "handleWorkerExit", function () {
-      _this._log('killed');
-
-      _this._onExitHandler(_this);
-    });
-
-    _defineProperty(this, "forceExit", function () {
-      _this._onExit();
-
-      _this._worker.kill();
-    });
-
-    _defineProperty(this, "handleWorkerMessage", function (message) {
-      var taskIndex = null;
-
-      _this.tasks.some(function (task, index) {
-        if (message.id === task.id) {
-          taskIndex = index;
-          return true;
-        }
-      });
-
-      if (taskIndex !== null) {
-        var task = _this.tasks[taskIndex];
-
-        if (message.error) {
-          _this._log("taskId(".concat(task.id, ") has thrown an error ").concat(message.error));
-
-          task.reject(new Error("task.js: ".concat(message.error)));
-        } else {
-          _this._log("taskId(".concat(task.id, ") has completed"));
-
-          task.resolve(message.result);
-        }
-
-        _this._onTaskComplete(_this);
-
-        _this.tasks.splice(taskIndex, 1);
-      }
-    });
-
-    this.id = $config.id;
-    this.managerId = $config.managerId;
-    this._debug = $config.debug;
-    this._logger = $config.logger;
-    this.tasks = [];
-    this.lastTaskTimestamp = null;
-    this._onTaskComplete = $config.onTaskComplete;
-    this._onExitHandler = $config.onExit;
-  }
-
-  _createClass(GeneralWorker, [{
-    key: "_log",
-    value: function _log(message) {
-      if (this._debug) {
-        this._logger("task.js:worker[managerId(".concat(this.managerId, ") workerId(").concat(this.id, ")]: ").concat(message));
-      }
-    }
-  }, {
-    key: "run",
-    value: function run($options) {
-      this.lastTaskTimestamp = new Date();
-      var task = {
-        id: $options.id,
-        startTime: new Date(),
-        resolve: $options.resolve,
-        reject: $options.reject,
-        $options: $options
-      };
-      this.tasks.push(task);
-      var message = {
-        id: task.id,
-        func: String($options["function"])
-      }; // because of transferables (we want to keep this object flat)
-
-      Object.keys($options.arguments).forEach(function (key, index) {
-        message['argument' + index] = $options.arguments[index];
-      });
-      this.postMessage(message, $options.transferables);
-    }
-  }, {
-    key: "_purgeTasks",
-    value: function _purgeTasks(reason) {
-      this.tasks.forEach(function (task) {
-        task.reject(reason);
-      });
-      this.tasks = [];
-    }
-  }]);
-
-  return GeneralWorker;
-}();
-
-module.exports = GeneralWorker;
-
-/***/ }),
-
-/***/ "./src/WorkerManager.js":
-/*!******************************!*\
-  !*** ./src/WorkerManager.js ***!
-  \******************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-/* WEBPACK VAR INJECTION */(function(process) {function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
-
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
-var WorkerManager =
-/*#__PURE__*/
-function () {
-  function WorkerManager($config, WorkerProxies) {
-    var _this = this;
-
-    _classCallCheck(this, WorkerManager);
-
-    _defineProperty(this, "_next", function () {
-      if (_this._taskTimeout) {
-        _this._reissueTasksInTimedoutWorkers();
-      }
-
-      if (!_this._queue.length) {
-        return;
-      }
-
-      var worker = _this._getWorker();
-
-      if (!worker) {
-        setTimeout(_this._next, 0);
-        return;
-      }
-
-      var task = _this._queue.shift();
-
-      _this._log("sending taskId(".concat(task.id, ") to workerId(").concat(worker.id, ")"));
-
-      worker.run(task);
-    });
-
-    _defineProperty(this, "_onWorkerTaskComplete", function () {
-      _this._next();
-    });
-
-    _defineProperty(this, "_onWorkerExit", function (worker) {
-      _this._log("worker died, reissuing task"); // purge dead worker from pool
-
-
-      _this._workers = _this._workers.filter(function (item) {
-        return item != worker;
-      }); // add work back to queue
-
-      worker.tasks.forEach(function (task) {
-        _this._queue.push(task.$options);
-      }); // run tick
-
-      _this._next();
-    });
-
-    $config = $config || {};
-    this.id = ++WorkerManager.managerCount;
-
-    if ($config.workerType === 'worker_threads') {
-      try {
-        __webpack_require__(!(function webpackMissingModule() { var e = new Error("Cannot find module 'worker_threads'"); e.code = 'MODULE_NOT_FOUND'; throw e; }()));
-      } catch (error) {
-        console.error('Your current version, or configuration of Node.js does not support worker_threads.');
-        process.exit(1);
-      }
-
-      this._WorkerProxy = WorkerProxies.NodeWorkerThread;
-    } else if ($config.workerType == 'compatibility_worker') {
-      this._WorkerProxy = WorkerProxies.CompatibilityWorker;
-    } else {
-      this._WorkerProxy = WorkerProxies.DefaultWorkerProxy;
-    }
-
-    this._logger = $config.logger || console.log;
-    this._workerTaskConcurrency = ($config.workerTaskConcurrency || 1) - 1;
-    this._maxWorkers = $config.maxWorkers || 4;
-    this._idleTimeout = $config.idleTimeout === false ? false : $config.idleTimeout;
-    this._taskTimeout = $config.taskTimeout || 0;
-    this._idleCheckInterval = $config.idleCheckInterval || 1000;
-    this._warmStart = $config.warmStart || false;
-    this._globals = $config.globals;
-    this._globalsInitializationFunction = $config.initialize;
-    this._debug = $config.debug;
-
-    this._log("creating new pool : ".concat(JSON.stringify($config)));
-
-    this._workers = [];
-    this._workersInitializing = [];
-    this._queue = [];
-    this._onWorkerTaskComplete = this._onWorkerTaskComplete.bind(this);
-    this._flushIdleWorkers = this._flushIdleWorkers.bind(this);
-    this._totalWorkersCreated = 0;
-    this._lastTaskTimeoutCheck = new Date();
-
-    if (this._warmStart) {
-      this._log("warm starting workers");
-
-      for (var i = 0; i < this._maxWorkers; i++) {
-        this._createWorker();
-      }
-    }
-  }
-
-  _createClass(WorkerManager, [{
-    key: "_log",
-    value: function _log(message) {
-      if (this._debug) {
-        this._logger("task.js:manager[managerId(".concat(this.id, ")] ").concat(message));
-      }
-    }
-  }, {
-    key: "getActiveWorkerCount",
-    value: function getActiveWorkerCount() {
-      return this._workersInitializing.length + this._workers.length;
-    }
-  }, {
-    key: "run",
-    value: function run(task) {
-      if (this._idleTimeout && typeof this._idleCheckIntervalID !== 'number') {
-        this._idleCheckIntervalID = setInterval(this._flushIdleWorkers, this._idleCheckInterval);
-      }
-
-      if (!task.arguments || typeof task.arguments.length === 'undefined') {
-        throw new Error('task.js: "arguments" is required property, and it must be an array/array-like');
-      }
-
-      if (!task["function"] && (typeof task["function"] !== 'function' || typeof task["function"] !== 'string')) {
-        throw new Error('task.js: "function" is required property, and it must be a string or a function');
-      }
-
-      if (_typeof(task.arguments) === 'object') {
-        task.arguments = Array.prototype.slice.call(task.arguments);
-      }
-
-      task.id = ++WorkerManager.taskCount;
-
-      this._log("added taskId(".concat(task.id, ") to the queue"));
-
-      return new Promise(function (resolve, reject) {
-        task.resolve = resolve;
-        task.reject = reject;
-
-        this._queue.push(task);
-
-        this._next();
-      }.bind(this));
-    }
-  }, {
-    key: "_runOnWorker",
-    value: function _runOnWorker(worker, args, func) {
-      return new Promise(function (resolve, reject) {
-        worker.run({
-          id: ++WorkerManager.taskCount,
-          arguments: args,
-          "function": func,
-          resolve: resolve,
-          reject: reject
-        });
-      });
-    }
-  }, {
-    key: "wrap",
-    value: function wrap(func) {
-      var _ref = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {
-        useTransferables: false
-      },
-          useTransferables = _ref.useTransferables;
-
-      return function () {
-        var args = Array.from(arguments),
-            transferables = null;
-
-        if (useTransferables) {
-          transferables = args.slice(-1)[0];
-
-          if (!Array.isArray(transferables)) {
-            throw new Error('Task expects to be passed a transferables array as its last argument.');
-          }
-
-          args = args.slice(0, -1);
-        }
-
-        return this.run({
-          arguments: args,
-          transferables: transferables,
-          "function": func
-        });
-      }.bind(this);
-    }
-  }, {
-    key: "terminate",
-    value: function terminate() {
-      this._log("terminated"); // kill idle timeout (if it exists)
-
-
-      if (this._idleTimeout && typeof this._idleCheckIntervalID == 'number') {
-        clearInterval(this._idleCheckIntervalID);
-        this._idleCheckIntervalID = null;
-      } // terminate all existing workers
-
-
-      this._workers.forEach(function (worker) {
-        worker.terminate();
-      }); // flush worker pool
-
-
-      this._workers = [];
-    }
-  }, {
-    key: "_reissueTasksInTimedoutWorkers",
-    value: function _reissueTasksInTimedoutWorkers() {
-      var _this2 = this;
-
-      if (new Date() - this._lastTaskTimeoutCheck < 5000) {
-        return;
-      }
-
-      this._lastTaskTimeoutCheck = new Date();
-
-      this._workers.forEach(function (worker) {
-        worker.tasks.some(function (task) {
-          if (new Date() - task.startTime >= _this2._taskTimeout) {
-            worker.forceExit();
-            return true;
-          }
-        });
-      });
-    }
-  }, {
-    key: "_flushIdleWorkers",
-    value: function _flushIdleWorkers() {
-      this._log("flushing idle workers");
-
-      this._workers = this._workers.filter(function (worker) {
-        if (worker.tasks.length === 0 && new Date() - worker.lastTaskTimestamp > this._idleTimeout) {
-          worker.terminate();
-          return false;
-        } else {
-          return true;
-        }
-      }, this);
-    }
-  }, {
-    key: "_getWorker",
-    value: function _getWorker() {
-      var _this3 = this;
-
-      var idleWorkers = this._workers.filter(function (worker) {
-        return worker.tasks.length <= _this3._workerTaskConcurrency;
-      }).sort(function (a, b) {
-        return a.tasks.length - b.tasks.length;
-      });
-
-      if (idleWorkers.length) {
-        return idleWorkers[0];
-      } else if (this._workers.length < this._maxWorkers && this._workersInitializing.length === 0) {
-        return this._createWorker();
-      } else {
-        return null;
-      }
-    }
-  }, {
-    key: "_createWorker",
-    value: function _createWorker() {
-      var workerId = ++this._totalWorkersCreated;
-      var worker = new this._WorkerProxy({
-        debug: this._debug,
-        logger: this._logger,
-        id: workerId,
-        managerId: this.id,
-        onTaskComplete: this._onWorkerTaskComplete,
-        onExit: this._onWorkerExit
-      });
-
-      if (this._globalsInitializationFunction || this._globals) {
-        this._log("running global initialization code");
-
-        var globalsInitializationFunction = "\n\t\t\t\tfunction (_globals) {\n\t\t\t\t\tglobals = (".concat((this._globalsInitializationFunction || function (globals) {
-          return globals;
-        }).toString(), ")(_globals || {});\n\t\t\t\t}\n\t\t\t").trim();
-
-        this._workersInitializing.push(worker);
-
-        this._runOnWorker(worker, [this._globals || {}], globalsInitializationFunction).then(function () {
-          this._workersInitializing = this._workersInitializing.filter(function (item) {
-            return item != worker;
-          });
-
-          this._workers.push(worker);
-        }.bind(this));
-
-        return null;
-      } else {
-        this._workers.push(worker);
-
-        return worker;
-      }
-    }
-  }]);
-
-  return WorkerManager;
-}();
-
-_defineProperty(WorkerManager, "managerCount", 0);
-
-_defineProperty(WorkerManager, "taskCount", 0);
-
-module.exports = WorkerManager;
-/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./../node_modules/process/browser.js */ "./node_modules/process/browser.js")))
-
-/***/ }),
-
-/***/ "./src/client/CompatibilityWorker.js":
-/*!*******************************************!*\
-  !*** ./src/client/CompatibilityWorker.js ***!
-  \*******************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
-
-function isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Date.prototype.toString.call(Reflect.construct(Date, [], function () {})); return true; } catch (e) { return false; } }
-
-function _construct(Parent, args, Class) { if (isNativeReflectConstruct()) { _construct = Reflect.construct; } else { _construct = function _construct(Parent, args, Class) { var a = [null]; a.push.apply(a, args); var Constructor = Function.bind.apply(Parent, a); var instance = new Constructor(); if (Class) _setPrototypeOf(instance, Class.prototype); return instance; }; } return _construct.apply(null, arguments); }
-
-function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
-
-function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance"); }
-
-function _iterableToArray(iter) { if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter); }
-
-function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
-
-function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
-
-function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
-
-function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
-
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
-var GeneralWorker = __webpack_require__(/*! ../GeneralWorker */ "./src/GeneralWorker.js");
-
-var CompatibilityWorker =
-/*#__PURE__*/
-function (_GeneralWorker) {
-  _inherits(CompatibilityWorker, _GeneralWorker);
-
-  function CompatibilityWorker() {
-    var _this;
-
-    _classCallCheck(this, CompatibilityWorker);
-
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(CompatibilityWorker).apply(this, arguments));
-
-    _defineProperty(_assertThisInitialized(_this), "postMessage", function (message, options) {
-      // toss it out of the event loop
-      _this._setTimeoutID = setTimeout(function () {
-        var args = Object.keys(message).filter(function (key) {
-          return key.match(/^argument/);
-        }).sort(function (a, b) {
-          return parseInt(a.slice(8), 10) - parseInt(b.slice(8), 10);
-        }).map(function (key) {
-          return message[key];
-        });
-        var functionBody = message.func.substring(message.func.indexOf('{') + 1, message.func.lastIndexOf('}')),
-            argNames = message.func.substring(message.func.indexOf('(') + 1, message.func.indexOf(')')).split(',');
-
-        var func = _construct(Function, _toConsumableArray(argNames).concat([functionBody])); // we cant use eval
-
-
-        try {
-          var result = func.apply(void 0, _toConsumableArray(args));
-
-          _this.handleWorkerMessage({
-            id: message.id,
-            result: result
-          });
-        } catch (error) {
-          _this.handleWorkerMessage({
-            id: message.id,
-            'error': error.stack
-          });
-        }
-      }, 1);
-    });
-
-    _defineProperty(_assertThisInitialized(_this), "terminate", function () {
-      clearTimeout(_this._setTimeoutID);
-      _this._setTimeoutID = null;
-    });
-
-    _this._setTimeoutID = null;
-    return _this;
-  }
-
-  return CompatibilityWorker;
-}(GeneralWorker);
-
-module.exports = CompatibilityWorker;
-
-/***/ }),
-
-/***/ "./src/client/WebWorker.js":
-/*!*********************************!*\
-  !*** ./src/client/WebWorker.js ***!
-  \*********************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
-
-function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
-
-function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
-
-function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
-
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
-var functionToObjectURL = __webpack_require__(/*! ./functionToObjectURL */ "./src/client/functionToObjectURL.js");
-
-var GeneralWorker = __webpack_require__(/*! ../GeneralWorker */ "./src/GeneralWorker.js");
-
-var WebWorker =
-/*#__PURE__*/
-function (_GeneralWorker) {
-  _inherits(WebWorker, _GeneralWorker);
-
-  function WebWorker($config) {
-    var _this;
-
-    _classCallCheck(this, WebWorker);
-
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(WebWorker).apply(this, arguments));
-
-    _defineProperty(_assertThisInitialized(_this), "WORKER_SOURCE", "function () {\n\t\tonmessage = function (event) {\n\t\t\tvar message = event.data;\n\n\t\t\tvar args = Object.keys(message).filter(function (key) {\n\t\t\t\treturn key.match(/^argument/);\n\t\t\t}).sort(function (a, b) {\n\t\t\t\treturn parseInt(a.slice(8), 10) - parseInt(b.slice(8), 10);\n\t\t\t}).map(function (key) {\n\t\t\t\treturn message[key];\n\t\t\t});\n\n\t\t\ttry {\n\t\t\t\tvar result = eval('(' + message.func + ')').apply(null, args);\n\n\t\t\t\tif (typeof Promise != 'undefined' && result instanceof Promise) {\n\t\t\t\t\tresult.then(function (result) {\n\t\t\t\t\t\tpostMessage({id: message.id, result: result});\n\t\t\t\t\t}).catch(function (error) {\n\t\t\t\t\t\tpostMessage({id: message.id, error: error.stack});\n\t\t\t\t\t});\n\t\t\t\t} else {\n\t\t\t\t\tpostMessage({id: message.id, result: result});\n\t\t\t\t}\n\t\t\t} catch (error) {\n\t\t\t\tpostMessage({id: message.id, error: error.stack});\n\t\t\t}\n\t\t}\n\t}");
-
-    _defineProperty(_assertThisInitialized(_this), "_onMessage", function (event) {
-      var message = event.data;
-
-      _this.handleWorkerMessage(message);
-    });
-
-    _defineProperty(_assertThisInitialized(_this), "postMessage", function (message, options) {
-      _this._log("sending taskId(".concat(message.id, ") to worker process"));
-
-      _this._worker.postMessage(message, options);
-    });
-
-    _defineProperty(_assertThisInitialized(_this), "terminate", function () {
-      _this._log("terminated");
-
-      _this._worker.terminate();
-    });
-
-    _this._worker = new Worker(functionToObjectURL(_this.WORKER_SOURCE));
-
-    _this._worker.addEventListener('message', _this._onMessage);
-
-    _this._log("initialized");
-
-    return _this;
-  }
-
-  return WebWorker;
-}(GeneralWorker);
-
-module.exports = WebWorker;
-
-/***/ }),
-
-/***/ "./src/client/functionToObjectURL.js":
-/*!*******************************************!*\
-  !*** ./src/client/functionToObjectURL.js ***!
-  \*******************************************/
-/*! no static exports found */
-/***/ (function(module, exports) {
-
-module.exports = function functionToObjectURL(func) {
-  var blob,
-      stringFunc = func.toString();
-  stringFunc = stringFunc.substring(stringFunc.indexOf('{') + 1, stringFunc.lastIndexOf('}'));
-
-  try {
-    blob = new Blob([stringFunc], {
-      'type': 'text/javascript'
-    });
-  } catch (error) {
-    // Backwards-compatibility
-    window.BlobBuilder = window.BlobBuilder || window.WebKitBlobBuilder || window.MozBlobBuilder;
-    blob = new BlobBuilder();
-    blob.append(stringFunc);
-    blob = blob.getBlob();
-  }
-
-  return (window.URL || window.webkitURL).createObjectURL(blob);
-};
-
-/***/ }),
-
-/***/ "./src/client/index.js":
-/*!*****************************!*\
-  !*** ./src/client/index.js ***!
-  \*****************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
-
-function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
-
-function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
-
-function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
-
-var isModern = __webpack_require__(/*! ./isModern */ "./src/client/isModern.js");
-
-var WorkerManager = __webpack_require__(/*! ../WorkerManager */ "./src/WorkerManager.js");
-
-var generateTaskFactoryMethod = __webpack_require__(/*! ../generateTaskFactoryMethod */ "./src/generateTaskFactoryMethod.js");
-
-var CompatibilityWorker = __webpack_require__(/*! ./CompatibilityWorker */ "./src/client/CompatibilityWorker.js"); // console.log(isModern);
-
-
-var WorkerProxies = {
-  CompatibilityWorker: CompatibilityWorker
-};
-
-if (isModern()) {
-  WorkerProxies.DefaultWorkerProxy = __webpack_require__(/*! ./WebWorker */ "./src/client/WebWorker.js");
-} // const defaults = {
-// 	maxWorkers: navigator.hardwareConcurrency
-// };
-//var WebWorker = isModern() ? require('./WebWorker') : require('./CompatibilityWorker');
-
-
-module.exports =
-/*#__PURE__*/
-function (_WorkerManager) {
-  _inherits(ServerWorkerManager, _WorkerManager);
-
-  function ServerWorkerManager($config) {
-    _classCallCheck(this, ServerWorkerManager);
-
-    return _possibleConstructorReturn(this, _getPrototypeOf(ServerWorkerManager).call(this, $config, WorkerProxies));
-  }
-
-  return ServerWorkerManager;
-}(WorkerManager);
-
-/***/ }),
-
-/***/ "./src/client/isModern.js":
-/*!********************************!*\
-  !*** ./src/client/isModern.js ***!
-  \********************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-var functionToObjectURL = __webpack_require__(/*! ./functionToObjectURL */ "./src/client/functionToObjectURL.js");
-
-module.exports = function isModern() {
-  if (typeof Worker != 'undefined' && (window.URL || window.webkitURL)) {
-    try {
-      var worker = new Worker(functionToObjectURL(function () {}));
-      worker.terminate();
-      return true;
-    } catch (error) {}
-  }
-
-  return false;
-};
-
-/***/ }),
-
-/***/ "./src/generateTaskFactoryMethod.js":
-/*!******************************************!*\
-  !*** ./src/generateTaskFactoryMethod.js ***!
-  \******************************************/
-/*! no static exports found */
-/***/ (function(module, exports) {
-
-module.exports = function generateTaskFactoryMethod(defaults, WorkerProxy, WorkerManager) {
-  return function ($config, WorkerProxyOverride) {
-    var config = {}; // clone defaults
-
-    Object.keys(defaults).forEach(function (key) {
-      return config[key] = defaults[key];
-    }); // apply user settings
-
-    Object.keys($config).forEach(function (key) {
-      return config[key] = $config[key];
-    });
-    return new WorkerManager(config, WorkerProxyOverride || WorkerProxy);
-  };
-};
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./../node_modules/webpack/buildin/global.js */ "./node_modules/webpack/buildin/global.js")))
 
 /***/ })
 

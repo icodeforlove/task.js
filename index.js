@@ -1,7 +1,7 @@
-if (typeof window === 'undefined') {
+if (typeof process != 'undefined' && !process.browser) {
     // node context
-    module.exports = require(__dirname + '/dist/server/server');
+    module.exports = require('./dist/server/server');
 } else {
     // browser context
-    module.exports = require(__dirname + '/dist/server/client');
+    module.exports = require('./dist/client/client');
 }

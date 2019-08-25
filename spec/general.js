@@ -6,7 +6,6 @@ module.exports = function (Task, Promise, {workerType} = {}) {
 			let defaults = {
 				maxWorkers: 3,
 				idleTimeout: 5000,
-				idleCheckInterval: 11000,
 				workerType
 			};
 
@@ -14,7 +13,6 @@ module.exports = function (Task, Promise, {workerType} = {}) {
 
 			expect(customTask._maxWorkers).toBe(defaults.maxWorkers);
 			expect(customTask._idleTimeout).toBe(defaults.idleTimeout);
-			expect(customTask._idleCheckInterval).toBe(defaults.idleCheckInterval);
 			customTask.terminate();
 		});
 
