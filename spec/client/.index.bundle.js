@@ -364,6 +364,10 @@ function () {
     _classCallCheck(this, WorkerManager);
 
     _defineProperty(this, "_next", function () {
+      if (_this._terminated) {
+        return;
+      }
+
       if (_this._taskTimeout) {
         _this._reissueTasksInTimedoutWorkers();
       }
@@ -446,6 +450,7 @@ function () {
     this._globals = $config.globals;
     this._globalsInitializationFunction = $config.initialize;
     this._debug = $config.debug;
+    this._terminated = false;
 
     if (this._debug) {
       this._log({
@@ -513,6 +518,10 @@ function () {
   }, {
     key: "_run",
     value: function _run(task) {
+      if (this._terminated) {
+        return;
+      }
+
       if (this._idleTimeout && typeof this._idleCheckIntervalID !== 'number') {
         this._idleCheckIntervalID = setInterval(this._flushIdleWorkers, this._idleCheckInterval);
       }
@@ -600,8 +609,9 @@ function () {
           action: 'terminated',
           message: 'terminated'
         });
-      } // kill idle timeout (if it exists)
+      }
 
+      this._terminated = true; // kill idle timeout (if it exists)
 
       if (this._idleTimeout && typeof this._idleCheckIntervalID == 'number') {
         clearInterval(this._idleCheckIntervalID);
@@ -615,6 +625,7 @@ function () {
 
 
       this._workers = [];
+      this._queue = [];
     }
   }, {
     key: "_reissueTasksInTimedoutWorkers",
@@ -854,7 +865,7 @@ function (_GeneralWorker) {
 
     _this = _possibleConstructorReturn(this, _getPrototypeOf(WebWorker).apply(this, arguments));
 
-    _defineProperty(_assertThisInitialized(_this), "WORKER_SOURCE", "function () {\n\t\tlet global = new Proxy(\n\t\t  {},\n\t\t  {\n\t\t    set: (obj, prop, newval) => (self[prop] = newval)\n\t\t  }\n\t\t);\n\n\t\tonmessage = function (event) {\n\t\t\tvar message = event.data;\n\n\t\t\tvar args = Object.keys(message).filter(function (key) {\n\t\t\t\treturn key.match(/^argument/);\n\t\t\t}).sort(function (a, b) {\n\t\t\t\treturn parseInt(a.slice(8), 10) - parseInt(b.slice(8), 10);\n\t\t\t}).map(function (key) {\n\t\t\t\treturn message[key];\n\t\t\t});\n\n\t\t\ttry {\n\t\t\t\tvar result = eval('(' + message.func + ')').apply(null, args);\n\n\t\t\t\tif (typeof Promise != 'undefined' && result instanceof Promise) {\n\t\t\t\t\tresult.then(function (result) {\n\t\t\t\t\t\tpostMessage({id: message.id, result: result});\n\t\t\t\t\t}).catch(function (error) {\n\t\t\t\t\t\tpostMessage({id: message.id, error: error.stack});\n\t\t\t\t\t});\n\t\t\t\t} else {\n\t\t\t\t\tpostMessage({id: message.id, result: result});\n\t\t\t\t}\n\t\t\t} catch (error) {\n\t\t\t\tpostMessage({id: message.id, error: error.stack});\n\t\t\t}\n\t\t}\n\t}");
+    _defineProperty(_assertThisInitialized(_this), "WORKER_SOURCE", "function () {\n\t\tlet global = new Proxy(\n\t\t  {},\n\t\t  {\n\t\t    set: (obj, prop, newval) => (self[prop] = newval)\n\t\t  }\n\t\t);\n\n\t\tonmessage = function (event) {\n\t\t\tvar message = event.data;\n\n\t\t\tvar args = Object.keys(message).filter(function (key) {\n\t\t\t\treturn key.match(/^argument/);\n\t\t\t}).sort(function (a, b) {\n\t\t\t\treturn parseInt(a.slice(8), 10) - parseInt(b.slice(8), 10);\n\t\t\t}).map(function (key) {\n\t\t\t\treturn message[key];\n\t\t\t});\n\n\t\t\ttry {\n\t\t\t\tvar result = eval('(' + message.func + ')').apply(null, args);\n\n\t\t\t\tif (result && result.then && result.catch && result.finally) {\n\t\t\t\t\tresult.then(result => {\n\t\t\t\t\t\tself.postMessage({id: message.id, result: result});\n\t\t\t\t\t}).catch(error => {\n\t\t\t\t\t\tself.postMessage({id: message.id, error: error.stack});\n\t\t\t\t\t});\n\t\t\t\t} else {\n\t\t\t\t\tself.postMessage({id: message.id, result: result});\n\t\t\t\t}\n\t\t\t} catch (error) {\n\t\t\t\tself.postMessage({id: message.id, error: error.stack});\n\t\t\t}\n\t\t}\n\t}");
 
     _defineProperty(_assertThisInitialized(_this), "_onMessage", function (event) {
       var message = event.data;

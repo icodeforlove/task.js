@@ -49,6 +49,7 @@ class WorkerManager {
 		this._globals = $config.globals;
 		this._globalsInitializationFunction = $config.initialize;
 		this._debug = $config.debug;
+		this._terminated = false;
 
 		if (this._debug) {
 			this._log({
@@ -116,6 +117,10 @@ class WorkerManager {
 	}
 
 	_run (task) {
+		if (this._terminated) {
+			return;
+		}
+
 		if (this._idleTimeout && typeof this._idleCheckIntervalID !== 'number') {
 			this._idleCheckIntervalID = setInterval(this._flushIdleWorkers, this._idleCheckInterval);
 		}
@@ -199,6 +204,8 @@ class WorkerManager {
 			});
 		}
 
+		this._terminated = true;
+
 		// kill idle timeout (if it exists)
 		if (this._idleTimeout && typeof this._idleCheckIntervalID == 'number') {
 			clearInterval(this._idleCheckIntervalID);
@@ -212,6 +219,7 @@ class WorkerManager {
 
 		// flush worker pool
 		this._workers = [];
+		this._queue = [];
 	}
 
 	_reissueTasksInTimedoutWorkers () {
@@ -232,6 +240,10 @@ class WorkerManager {
 	}
 
 	_next = () => {
+		if (this._terminated) {
+			return;
+		}
+
 		if (this._taskTimeout) {
 			this._reissueTasksInTimedoutWorkers();
 		}

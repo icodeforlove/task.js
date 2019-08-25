@@ -46,6 +46,10 @@ function () {
     _classCallCheck(this, WorkerManager);
 
     _defineProperty(this, "_next", function () {
+      if (_this._terminated) {
+        return;
+      }
+
       if (_this._taskTimeout) {
         _this._reissueTasksInTimedoutWorkers();
       }
@@ -128,6 +132,7 @@ function () {
     this._globals = $config.globals;
     this._globalsInitializationFunction = $config.initialize;
     this._debug = $config.debug;
+    this._terminated = false;
 
     if (this._debug) {
       this._log({
@@ -195,6 +200,10 @@ function () {
   }, {
     key: "_run",
     value: function _run(task) {
+      if (this._terminated) {
+        return;
+      }
+
       if (this._idleTimeout && typeof this._idleCheckIntervalID !== 'number') {
         this._idleCheckIntervalID = setInterval(this._flushIdleWorkers, this._idleCheckInterval);
       }
@@ -282,8 +291,9 @@ function () {
           action: 'terminated',
           message: 'terminated'
         });
-      } // kill idle timeout (if it exists)
+      }
 
+      this._terminated = true; // kill idle timeout (if it exists)
 
       if (this._idleTimeout && typeof this._idleCheckIntervalID == 'number') {
         clearInterval(this._idleCheckIntervalID);
@@ -297,6 +307,7 @@ function () {
 
 
       this._workers = [];
+      this._queue = [];
     }
   }, {
     key: "_reissueTasksInTimedoutWorkers",
