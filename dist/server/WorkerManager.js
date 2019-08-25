@@ -145,16 +145,25 @@ function () {
     this._lastTaskTimeoutCheck = new Date();
 
     if (this._warmStart) {
-      if (this._debug) {
-        this._log({
-          action: 'warmstart',
-          message: 'warm starting workers'
-        });
-      }
+      setTimeout(function () {
+        if (_this._debug) {
+          _this._log({
+            action: 'warmstart',
+            message: 'warm starting workers'
+          });
+        }
 
-      for (var i = 0; i < this._maxWorkers; i++) {
-        this._createWorker();
-      }
+        for (var i = 0; i < _this._maxWorkers; i++) {
+          _this._createWorker();
+        }
+
+        if (_this._debug) {
+          _this._log({
+            action: 'warmstart_completed',
+            message: 'started workers'
+          });
+        }
+      }, 0);
     }
   }
 

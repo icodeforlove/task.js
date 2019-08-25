@@ -463,16 +463,25 @@ function () {
     this._lastTaskTimeoutCheck = new Date();
 
     if (this._warmStart) {
-      if (this._debug) {
-        this._log({
-          action: 'warmstart',
-          message: 'warm starting workers'
-        });
-      }
+      setTimeout(function () {
+        if (_this._debug) {
+          _this._log({
+            action: 'warmstart',
+            message: 'warm starting workers'
+          });
+        }
 
-      for (var i = 0; i < this._maxWorkers; i++) {
-        this._createWorker();
-      }
+        for (var i = 0; i < _this._maxWorkers; i++) {
+          _this._createWorker();
+        }
+
+        if (_this._debug) {
+          _this._log({
+            action: 'warmstart_completed',
+            message: 'started workers'
+          });
+        }
+      }, 0);
     }
   }
 
@@ -20287,9 +20296,11 @@ module.exports = function (Task, Promise) {
         maxWorkers: 2,
         workerType: workerType
       });
-      expect(customTask.getActiveWorkerCount()).toEqual(2);
-      customTask.terminate();
-      done();
+      setTimeout(function () {
+        expect(customTask.getActiveWorkerCount()).toEqual(2);
+        customTask.terminate();
+        done();
+      }, 100);
     });
     it('can warmStart with globals', function (done) {
       var customTask = new Task({
@@ -20300,9 +20311,11 @@ module.exports = function (Task, Promise) {
         maxWorkers: 2,
         workerType: workerType
       });
-      expect(customTask.getActiveWorkerCount()).toEqual(2);
-      customTask.terminate();
-      done();
+      setTimeout(function () {
+        expect(customTask.getActiveWorkerCount()).toEqual(2);
+        customTask.terminate();
+        done();
+      }, 100);
     });
     it('can use requires', function (done) {
       var customTask = new Task({

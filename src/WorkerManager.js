@@ -66,16 +66,25 @@ class WorkerManager {
 		this._lastTaskTimeoutCheck = new Date();
 
 		if (this._warmStart) {
-			if (this._debug) {
-				this._log({
-					action: 'warmstart',
-					message: 'warm starting workers'
-				});
-			}
+			setTimeout(() => {
+				if (this._debug) {
+					this._log({
+						action: 'warmstart',
+						message: 'warm starting workers'
+					});
+				}
 
-			for (let i = 0; i < this._maxWorkers; i++) {
-				this._createWorker();
-			}
+				for (let i = 0; i < this._maxWorkers; i++) {
+					this._createWorker();
+				}
+
+				if (this._debug) {
+					this._log({
+						action: 'warmstart_completed',
+						message: 'started workers'
+					});
+				}
+			}, 0);
 		}
 	}
 
