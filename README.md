@@ -2,6 +2,7 @@
 This module is intended to make working with blocking tasks a bit easier, and is meant to work in node as well as the browser.
 
 **[LIVE DEMO 1](https://icodeforlove.github.io/task.js)**
+
 **[LIVE DEMO 2](https://codepen.io/icodeforlove/full/ZOjBBB)**
 
 It works by creating a worker pool, and sending tasks to workers that are not busy. If all workers are busy then the task gets queued until there is room.
