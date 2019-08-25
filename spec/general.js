@@ -250,10 +250,11 @@ module.exports = function (Task, Promise, {workerType} = {}) {
 				workerType
 			});
 
-			expect(customTask.getActiveWorkerCount()).toEqual(2);
-
-			customTask.terminate();
-			done();
+			setTimeout(() => {
+				expect(customTask.getActiveWorkerCount()).toEqual(2);
+				customTask.terminate();
+				done();
+			}, 200);
 		});
 
 		it('can warmStart with globals', function (done) {
@@ -266,10 +267,12 @@ module.exports = function (Task, Promise, {workerType} = {}) {
 				workerType
 			});
 
-			expect(customTask.getActiveWorkerCount()).toEqual(2);
+			setTimeout(() => {
+				expect(customTask.getActiveWorkerCount()).toEqual(2);
 
-			customTask.terminate();
-			done();
+				customTask.terminate();
+				done();
+			}, 200);
 		});
 
 		it('can use requires', function (done) {

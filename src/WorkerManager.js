@@ -45,9 +45,11 @@ class WorkerManager {
 		this._taskTimeout = $config.taskTimeout || 0;
 		this._idleCheckInterval = 1000;
 		this._warmStart = $config.warmStart || false;
+		this._warmStartCompleted = false;
 		this._globals = $config.globals;
 		this._globalsInitializationFunction = $config.initialize;
 		this._debug = $config.debug;
+		this._terminated = false;
 
 		if (this._debug) {
 			this._log({
@@ -66,16 +68,27 @@ class WorkerManager {
 		this._lastTaskTimeoutCheck = new Date();
 
 		if (this._warmStart) {
-			if (this._debug) {
-				this._log({
-					action: 'warmstart',
-					message: 'warm starting workers'
-				});
-			}
+			setTimeout(() => {
+				if (this._debug) {
+					this._log({
+						action: 'warmstart',
+						message: 'warm starting workers'
+					});
+				}
 
-			for (let i = 0; i < this._maxWorkers; i++) {
-				this._createWorker();
-			}
+				for (let i = 0; i < this._maxWorkers; i++) {
+					this._createWorker();
+				}
+
+				this._warmStartCompleted = true;
+
+				if (this._debug) {
+					this._log({
+						action: 'warmstart_completed',
+						message: 'started workers'
+					});
+				}
+			}, 0);
 		}
 	}
 
@@ -104,6 +117,10 @@ class WorkerManager {
 	}
 
 	_run (task) {
+		if (this._terminated) {
+			return;
+		}
+
 		if (this._idleTimeout && typeof this._idleCheckIntervalID !== 'number') {
 			this._idleCheckIntervalID = setInterval(this._flushIdleWorkers, this._idleCheckInterval);
 		}
@@ -187,6 +204,8 @@ class WorkerManager {
 			});
 		}
 
+		this._terminated = true;
+
 		// kill idle timeout (if it exists)
 		if (this._idleTimeout && typeof this._idleCheckIntervalID == 'number') {
 			clearInterval(this._idleCheckIntervalID);
@@ -200,6 +219,7 @@ class WorkerManager {
 
 		// flush worker pool
 		this._workers = [];
+		this._queue = [];
 	}
 
 	_reissueTasksInTimedoutWorkers () {
@@ -220,6 +240,10 @@ class WorkerManager {
 	}
 
 	_next = () => {
+		if (this._terminated) {
+			return;
+		}
+
 		if (this._taskTimeout) {
 			this._reissueTasksInTimedoutWorkers();
 		}
@@ -297,7 +321,10 @@ class WorkerManager {
 
 		if (idleWorkers.length) {
 			return idleWorkers[0];
-		} else if (this._workers.length < this._maxWorkers && this._workersInitializing.length === 0) {
+		} else if (
+			this._workers.length < this._maxWorkers && this._workersInitializing.length === 0 &&
+			!(this._warmStart && !this._warmStartCompleted)
+		) {
 			return this._createWorker();
 		} else {
 			return null;

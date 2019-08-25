@@ -1,0 +1,198 @@
+<html>
+	<head>
+		<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.6/dat.gui.min.js"></script>
+		<script type="text/javascript" src="./dist/client/task.js"></script>
+		<style type="text/css">
+			body {
+				font-family: helvetica;
+			}
+			#container {
+
+			}
+			.workers {
+				padding-top: 20px;
+				justify-content: space-between;
+			}
+			.worker {
+				position: relative;
+				float: left;
+				width: 130px;
+				border: 2px solid #888;
+				padding: 0px;
+				margin: 2px;
+			}
+			.worker-id {
+				left: 0;
+				right: 0;
+				position: absolute;
+				top: -22px;
+				color: #444;
+				font-size: 14px;
+				font-weight: bold;
+				text-align: center;
+			}
+			.slot {
+				color: #fff;
+				background: #0777bb;
+				height: 40px;
+				margin: 4px;
+			}
+			.job {
+				font-size: 10px;
+				background: #bb1b1b;
+				padding: 7px;
+				height: 26px;
+			}
+			.idle {
+				text-align: center;
+				font-size: 14px;
+				line-height: 40px;
+			}
+			.queue {
+				padding-top: 10px;
+				clear: left;
+				font-size: 20px;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="container"></div>
+
+		<script type="text/javascript">
+			let config = {
+				workerTaskConcurrency: 2,
+				maxWorkers: 2,
+				interval: 50,
+				taskLockTime: 60,
+				taskCount: 100,
+				locking: false,
+				run_locking: () => {
+					realLockingTask(2000);
+				}
+			};
+
+			function realLockingTask (ms) {
+				let date = Date.now();
+				let curDate = null;
+				do { curDate = Date.now(); }
+				while(curDate-date < ms);
+			}
+
+			let gui = new dat.GUI();
+			gui.width = 400;
+			gui.useLocalStorage = true;
+			gui.add(config, 'maxWorkers', 1, navigator.hardwareConcurrency).step(1).onChange(initialize);
+			gui.add(config, 'workerTaskConcurrency', 1, 8).step(1).onChange(initialize);
+			gui.add(config, 'interval', 50, 5000).step(10).onChange(initialize);
+			gui.add(config, 'taskLockTime', 50, 5000).step(10).onChange(initialize);
+			gui.add(config, 'taskCount', 10, 1000).step(1).onChange(initialize);
+			gui.add(config, 'locking').onChange(() => {
+				if (config.locking) {
+					config.workerTaskConcurrency = 1;
+				}
+
+				for (let i in gui.__controllers) {
+					gui.__controllers[i].updateDisplay();
+				}
+
+				initialize();
+			});
+			gui.add(config, 'run_locking').name('RUN LOCK ON MAIN THREAD');
+
+			let task,
+				workerId,
+				updateTimeout,
+				completedTasks = 0;
+
+			function initialize () {
+				clearTimeout(updateTimeout);
+
+				updateTimeout = setTimeout(() => {
+					if (task) {
+						task.terminate();
+					}
+
+					task = null;
+					completedTasks = -(config.maxWorkers); // we have to omit initialize tasks
+
+					new Task({
+						requires: {
+							saw: 'https://cdnjs.cloudflare.com/ajax/libs/string-saw/0.0.42/saw.js',
+							Promise: 'https://cdnjs.cloudflare.com/ajax/libs/bluebird/3.5.5/bluebird.min.js'
+						},
+						logger: (event, self) => {
+							if (event.action === 'warmstart_completed') {
+								task = self;
+
+
+								let lockingTask;
+
+								if (config.locking) {
+									lockingTask = task.wrap(realLockingTask);
+								} else {
+									lockingTask = task.wrap(async ms => {
+										await Promise.delay(ms);
+									});
+								}
+
+								for (let i = 0; i < config.taskCount; i++) {
+									lockingTask(config.taskLockTime);
+								}
+							} else if (event.action === 'task_completed') {
+								completedTasks++;
+							}
+						},
+						debug: true,
+						maxWorkers: config.maxWorkers,
+						workerTaskConcurrency: config.workerTaskConcurrency,
+						warmStart: true
+					});
+				}, 200);
+			}
+
+			function loop () {
+				if (task) {
+					document.getElementById('container').innerHTML = `
+					<div class="workers">
+						${task._workers.map(worker => {
+							let tasksHTML = worker.tasks.map(task => {
+								return `
+									<div class="slot">
+										<div class="job">
+											<div>task #${task.id}</div>
+											<div>${new Date() - task.startTime}ms</div>
+										</div>
+									</div>
+								`;
+							}).join('');
+
+							for (let i = 0; i < config.workerTaskConcurrency - worker.tasks.length; i++) {
+								tasksHTML += `
+								<div class="slot">
+									<div class="idle">IDLE SLOT</div>
+								</div>
+								`;
+							}
+
+							return `
+							<div class="worker">
+								<div class="worker-id">worker #${worker.id}</div>
+								${tasksHTML}
+							</div>
+							`;
+						}).join('')}
+					</div>
+					<div class="queue">
+						<div>Task Queue: <b>${task._queue.length}</b></div>
+						<div>Completed Tasks: <b>${completedTasks}</b></div>
+					</div>
+					`;
+				}
+
+				requestAnimationFrame(loop);
+			}
+			loop();
+			initialize();
+		</script>
+	</body>
+</html>

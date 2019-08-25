@@ -46,6 +46,10 @@ function () {
     _classCallCheck(this, WorkerManager);
 
     _defineProperty(this, "_next", function () {
+      if (_this._terminated) {
+        return;
+      }
+
       if (_this._taskTimeout) {
         _this._reissueTasksInTimedoutWorkers();
       }
@@ -124,9 +128,11 @@ function () {
     this._taskTimeout = $config.taskTimeout || 0;
     this._idleCheckInterval = 1000;
     this._warmStart = $config.warmStart || false;
+    this._warmStartCompleted = false;
     this._globals = $config.globals;
     this._globalsInitializationFunction = $config.initialize;
     this._debug = $config.debug;
+    this._terminated = false;
 
     if (this._debug) {
       this._log({
@@ -145,16 +151,27 @@ function () {
     this._lastTaskTimeoutCheck = new Date();
 
     if (this._warmStart) {
-      if (this._debug) {
-        this._log({
-          action: 'warmstart',
-          message: 'warm starting workers'
-        });
-      }
+      setTimeout(function () {
+        if (_this._debug) {
+          _this._log({
+            action: 'warmstart',
+            message: 'warm starting workers'
+          });
+        }
 
-      for (var i = 0; i < this._maxWorkers; i++) {
-        this._createWorker();
-      }
+        for (var i = 0; i < _this._maxWorkers; i++) {
+          _this._createWorker();
+        }
+
+        _this._warmStartCompleted = true;
+
+        if (_this._debug) {
+          _this._log({
+            action: 'warmstart_completed',
+            message: 'started workers'
+          });
+        }
+      }, 0);
     }
   }
 
@@ -183,6 +200,10 @@ function () {
   }, {
     key: "_run",
     value: function _run(task) {
+      if (this._terminated) {
+        return;
+      }
+
       if (this._idleTimeout && typeof this._idleCheckIntervalID !== 'number') {
         this._idleCheckIntervalID = setInterval(this._flushIdleWorkers, this._idleCheckInterval);
       }
@@ -270,8 +291,9 @@ function () {
           action: 'terminated',
           message: 'terminated'
         });
-      } // kill idle timeout (if it exists)
+      }
 
+      this._terminated = true; // kill idle timeout (if it exists)
 
       if (this._idleTimeout && typeof this._idleCheckIntervalID == 'number') {
         clearInterval(this._idleCheckIntervalID);
@@ -285,6 +307,7 @@ function () {
 
 
       this._workers = [];
+      this._queue = [];
     }
   }, {
     key: "_reissueTasksInTimedoutWorkers",
@@ -338,7 +361,7 @@ function () {
 
       if (idleWorkers.length) {
         return idleWorkers[0];
-      } else if (this._workers.length < this._maxWorkers && this._workersInitializing.length === 0) {
+      } else if (this._workers.length < this._maxWorkers && this._workersInitializing.length === 0 && !(this._warmStart && !this._warmStartCompleted)) {
         return this._createWorker();
       } else {
         return null;
