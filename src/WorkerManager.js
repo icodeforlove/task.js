@@ -75,7 +75,7 @@ class WorkerManager {
 				});
 			}
 
-			for (var i = 0; i < this._maxWorkers; i++) {
+			for (let i = 0; i < this._maxWorkers; i++) {
 				this._createWorker();
 			}
 		}
@@ -98,7 +98,7 @@ class WorkerManager {
 			event.message = event.action;
 		}
 
-		this._logger(event);
+		this._logger(event, this);
 	}
 
 	getActiveWorkerCount () {
@@ -164,7 +164,7 @@ class WorkerManager {
 
 	wrap (func) {
 		return function () {
-			var args = Array.from(arguments),
+			let args = Array.from(arguments),
 				transferables = null,
 				lastArg = args.slice(-1)[0];
 
@@ -307,7 +307,7 @@ class WorkerManager {
 	}
 
 	_createWorker () {
-		var workerId = ++this._totalWorkersCreated;
+		let workerId = ++this._totalWorkersCreated;
 
 		let worker = new this._WorkerProxy({
 			debug: this._debug,
@@ -326,7 +326,7 @@ class WorkerManager {
 				});
 			}
 
-			var globalsInitializationFunction = `function (_globals) {
+			let globalsInitializationFunction = `function (_globals) {
 				let requires = ${JSON.stringify(this._requires || {})};
 				Object.keys(requires).forEach(key => {
 					global[key] = require(requires[key]);

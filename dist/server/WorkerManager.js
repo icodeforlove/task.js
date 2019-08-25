@@ -177,7 +177,7 @@ function () {
         event.message = event.action;
       }
 
-      this._logger(event);
+      this._logger(event, this);
     }
   }, {
     key: "getActiveWorkerCount",
