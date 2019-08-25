@@ -272,6 +272,29 @@ module.exports = function (Task, Promise, {workerType} = {}) {
 			done();
 		});
 
+		it('can use requires', function (done) {
+			let customTask = new Task({
+				requires: workerType === 'web_worker' ? {
+					saw: 'https://cdnjs.cloudflare.com/ajax/libs/string-saw/0.0.42/saw.js'
+				} : {
+					saw: 'string-saw'
+				},
+				warmStart: true,
+				maxWorkers: 1,
+				workerType
+			});
+
+			customTask.run(
+					foo => saw(foo).append('bar').toString(),
+					'foo'
+				)
+				.then(function (foobar) {
+					expect(foobar).toBe('foobar');
+					customTask.terminate();
+					done();
+				})
+		});
+
 		it('can use globals and initialize', function (done) {
 			let customTask = new Task({
 				maxWorkers: 1,

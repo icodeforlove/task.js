@@ -123,6 +123,34 @@ await task.run(() => {
 
 Keep in mind that it is ok to have a slow initialize, no work will actually be processed until there is a fully initialized worker.
 
+## external libraries
+
+You can import libraries into your workers by providing `requires` object in the Task initialization.
+
+### browser
+
+Uses **[importScripts](https://developer.mozilla.org/en-US/docs/Web/API/WorkerGlobalScope/importScripts)** to import the library to the worker so it MUST expose the library on the global scope.
+
+```javascript
+requires: {
+	// key = the global name of this library (will fail if it does not match)
+	// value = the path/url of the library
+	saw: 'https://cdnjs.cloudflare.com/ajax/libs/string-saw/0.0.42/saw.js'
+}
+```
+
+### node
+
+Uses the standard requires method to import libraries
+
+```javascript
+requires: {
+	// key = the var you want to name the library
+	// value = the name of the npm library
+	saw: 'string-saw'
+}
+```
+
 ## async tasks
 
 Tasks can use `async`, and return promises

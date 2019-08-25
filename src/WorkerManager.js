@@ -22,7 +22,9 @@ class WorkerManager {
 
 		this.id = ++WorkerManager.managerCount;
 
-		if ($config.workerType === 'worker_threads') {
+		this._workerType = $config.workerType;
+
+		if (this._workerType === 'worker_threads') {
 			try {
 				require('worker_threads');
 			} catch (error) {
@@ -36,10 +38,6 @@ class WorkerManager {
 
 		this._logger = $config.logger || console.log;
 		this._requires = $config.requires;
-
-		if (!($config.workerType === 'worker_threads' || $config.workerType === 'fork_worker') && this._requires) {
-			throw new Error('Task.js requires is not supported in a clientside environment.');
-		}
 
 		this._workerTaskConcurrency = ($config.workerTaskConcurrency || 1) - 1;
 		this._maxWorkers = $config.maxWorkers || 1;
@@ -75,7 +73,7 @@ class WorkerManager {
 				});
 			}
 
-			for (var i = 0; i < this._maxWorkers; i++) {
+			for (let i = 0; i < this._maxWorkers; i++) {
 				this._createWorker();
 			}
 		}
@@ -98,7 +96,7 @@ class WorkerManager {
 			event.message = event.action;
 		}
 
-		this._logger(event);
+		this._logger(event, this);
 	}
 
 	getActiveWorkerCount () {
@@ -164,7 +162,7 @@ class WorkerManager {
 
 	wrap (func) {
 		return function () {
-			var args = Array.from(arguments),
+			let args = Array.from(arguments),
 				transferables = null,
 				lastArg = args.slice(-1)[0];
 
@@ -307,7 +305,7 @@ class WorkerManager {
 	}
 
 	_createWorker () {
-		var workerId = ++this._totalWorkersCreated;
+		let workerId = ++this._totalWorkersCreated;
 
 		let worker = new this._WorkerProxy({
 			debug: this._debug,
@@ -326,11 +324,32 @@ class WorkerManager {
 				});
 			}
 
-			var globalsInitializationFunction = `function (_globals) {
-				let requires = ${JSON.stringify(this._requires || {})};
+			let requireCode;
+
+			if (this._workerType === 'web_worker') {
+				requireCode = `
+				if (Object.keys(requires).length) {
+					importScripts(...Object.values(requires));
+
+					Object.keys(requires).forEach(key => {
+						if (typeof self[key] === 'undefined') {
+							throw new Error('Task.js: require failed importing ' + key + ' ("' + requires[key] + '")');
+						}
+					});
+				}
+				`;
+			} else {
+				requireCode = `
 				Object.keys(requires).forEach(key => {
 					global[key] = require(requires[key]);
 				});
+				`;
+			}
+
+			let globalsInitializationFunction = `function (_globals) {
+				let requires = ${JSON.stringify(this._requires || {})};
+
+				${requireCode}
 
 				if (typeof _globals != 'undefined') {
 					Object.keys(_globals).forEach(key => {
