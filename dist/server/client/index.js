@@ -20,31 +20,36 @@ var WorkerManager = require('../WorkerManager');
 
 var generateTaskFactoryMethod = require('../generateTaskFactoryMethod');
 
-var CompatibilityWorker = require('./CompatibilityWorker'); // console.log(isModern);
-
-
-var WorkerProxies = {
-  CompatibilityWorker: CompatibilityWorker
-};
+var WorkerProxies;
 
 if (isModern()) {
-  WorkerProxies.DefaultWorkerProxy = require('./WebWorker');
-} // const defaults = {
-// 	maxWorkers: navigator.hardwareConcurrency
-// };
-//var WebWorker = isModern() ? require('./WebWorker') : require('./CompatibilityWorker');
-
+  WorkerProxies = {
+    DefaultWorkerProxy: require('./WebWorker')
+  };
+}
 
 module.exports =
 /*#__PURE__*/
 function (_WorkerManager) {
-  _inherits(ServerWorkerManager, _WorkerManager);
+  _inherits(ClientWorkerManager, _WorkerManager);
 
-  function ServerWorkerManager($config) {
-    _classCallCheck(this, ServerWorkerManager);
+  function ClientWorkerManager() {
+    var $config = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
-    return _possibleConstructorReturn(this, _getPrototypeOf(ServerWorkerManager).call(this, $config, WorkerProxies));
+    _classCallCheck(this, ClientWorkerManager);
+
+    if (!WorkerProxies) {
+      throw new Error('The browser does not support Workers');
+    }
+
+    var config = {
+      workerType: 'web_worker'
+    };
+    Object.keys($config).forEach(function (key) {
+      return config[key] = $config[key];
+    });
+    return _possibleConstructorReturn(this, _getPrototypeOf(ClientWorkerManager).call(this, config, WorkerProxies));
   }
 
-  return ServerWorkerManager;
+  return ClientWorkerManager;
 }(WorkerManager);

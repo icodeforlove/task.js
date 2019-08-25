@@ -4,6 +4,10 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
 function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
 
 function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
@@ -30,18 +34,16 @@ function (_GeneralWorker) {
 
     _this = _possibleConstructorReturn(this, _getPrototypeOf(NodeWorker).apply(this, arguments));
 
-    _defineProperty(_assertThisInitialized(_this), "_log", function (message) {
-      if (_this._debug) {
-        _this._logger("task.js:worker[managerId(".concat(_this.managerId, ") workerId(").concat(_this.id, ") threadId(").concat(_this._worker.threadId, ")]: ").concat(message));
-      }
-    });
-
     _defineProperty(_assertThisInitialized(_this), "_onExit", function () {
       if (!_this._alive) {
         return;
       }
 
-      _this._log("killed");
+      if (_this._debug) {
+        _this._log({
+          action: 'killed'
+        });
+      }
 
       _this._alive = false;
 
@@ -49,18 +51,27 @@ function (_GeneralWorker) {
     });
 
     _defineProperty(_assertThisInitialized(_this), "_onMessage", function (message) {
-      //console.log(message);
       _this.handleWorkerMessage(message);
     });
 
-    _defineProperty(_assertThisInitialized(_this), "postMessage", function (message) {
-      _this._log("sending taskId(".concat(message.id, ") to worker process"));
+    _defineProperty(_assertThisInitialized(_this), "postMessage", function (message, transferables) {
+      if (_this._debug) {
+        _this._log({
+          taskId: message.id,
+          action: 'send_task_to_actual_worker',
+          message: "sending taskId(".concat(message.id, ") to worker process")
+        });
+      }
 
-      _this._worker.postMessage(message);
+      _this._worker.postMessage(message, transferables);
     });
 
     _defineProperty(_assertThisInitialized(_this), "terminate", function () {
-      _this._log("terminated");
+      if (_this._debug) {
+        _this._log({
+          action: 'terminated'
+        });
+      }
 
       _this._worker.terminate();
     });
@@ -83,12 +94,38 @@ function (_GeneralWorker) {
 
     _this._worker.on('error', _this._onExit);
 
+    _this._workerThreadId = _this._worker.threadId;
     _this._alive = true;
 
-    _this._log("initialized");
+    if (_this._debug) {
+      _this._log({
+        action: 'initialized'
+      });
+    }
 
     return _this;
   }
+
+  _createClass(NodeWorker, [{
+    key: "_log",
+    value: function _log(data) {
+      var event = {
+        source: 'worker_thread',
+        managerId: this.managerId,
+        workerId: this.id,
+        threadId: this._workerThreadId
+      };
+      Object.keys(data).forEach(function (key) {
+        event[key] = data[key];
+      });
+
+      if (!event.message) {
+        event.message = event.action;
+      }
+
+      this._logger(event);
+    }
+  }]);
 
   return NodeWorker;
 }(GeneralWorker);

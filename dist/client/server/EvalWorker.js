@@ -1,6 +1,5 @@
 "use strict";
 
-var globals = {};
 process.on('message', function (message) {
   var args = Object.keys(message).filter(function (key) {
     return key.match(/^argument/);

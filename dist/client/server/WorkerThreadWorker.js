@@ -4,7 +4,6 @@ var _require = require('worker_threads'),
     parentPort = _require.parentPort,
     workerData = _require.workerData;
 
-var globals = {};
 parentPort.on('message', function (message) {
   var args = Object.keys(message).filter(function (key) {
     return key.match(/^argument/);

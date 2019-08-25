@@ -33,18 +33,22 @@ module.exports =
 function (_WorkerManager) {
   _inherits(ServerWorkerManager, _WorkerManager);
 
-  function ServerWorkerManager($config) {
+  function ServerWorkerManager() {
+    var $config = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+
     _classCallCheck(this, ServerWorkerManager);
 
-    return _possibleConstructorReturn(this, _getPrototypeOf(ServerWorkerManager).call(this, $config, {
+    var config = {
+      workerType: 'fork_worker'
+    };
+    Object.keys($config).forEach(function (key) {
+      return config[key] = $config[key];
+    });
+    return _possibleConstructorReturn(this, _getPrototypeOf(ServerWorkerManager).call(this, config, {
       DefaultWorkerProxy: NodeWorker,
       NodeWorkerThread: NodeWorkerThread
     }));
   }
 
   return ServerWorkerManager;
-}(WorkerManager); //console.log(module.exports);
-// // expose default instance directly
-// module.exports = new WorkerManager(defaults, {DefaultWorkerProxy: NodeWorker, NodeWorkerThread});
-// // allow custom settings (task.js factory)
-// module.exports.defaults = generateTaskFactoryMethod(defaults, {DefaultWorkerProxy: NodeWorker, NodeWorkerThread}, WorkerManager);
+}(WorkerManager);

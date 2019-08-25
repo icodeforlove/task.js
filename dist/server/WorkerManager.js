@@ -2,13 +2,40 @@
 
 function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
 
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+var Transferables =
+/*#__PURE__*/
+function () {
+  function Transferables(transferables) {
+    _classCallCheck(this, Transferables);
+
+    this.transferables = transferables.map(function (transferable) {
+      if (!(transferable instanceof ArrayBuffer) && transferable && transferable.buffer instanceof ArrayBuffer) {
+        return transferable.buffer;
+      } else if (transferable instanceof ArrayBuffer) {
+        return transferable;
+      } else {
+        throw new Error('Task.js: invalid transferable argument (ensure its a buffer backed array, or a buffer)');
+      }
+    });
+  }
+
+  _createClass(Transferables, [{
+    key: "toArray",
+    value: function toArray() {
+      return this.transferables;
+    }
+  }]);
+
+  return Transferables;
+}();
 
 var WorkerManager =
 /*#__PURE__*/
@@ -36,7 +63,14 @@ function () {
 
       var task = _this._queue.shift();
 
-      _this._log("sending taskId(".concat(task.id, ") to workerId(").concat(worker.id, ")"));
+      if (_this._debug) {
+        _this._log({
+          action: 'send_task_to_worker',
+          taskId: task.id,
+          workerId: worker.id,
+          message: "sending taskId(".concat(task.id, ") to workerId(").concat(worker.id, ")")
+        });
+      }
 
       worker.run(task);
     });
@@ -46,7 +80,13 @@ function () {
     });
 
     _defineProperty(this, "_onWorkerExit", function (worker) {
-      _this._log("worker died, reissuing task"); // purge dead worker from pool
+      if (_this._debug) {
+        _this._log({
+          action: 'worker_died',
+          workerId: worker.id,
+          message: "worker died, reissuing tasks"
+        });
+      } // purge dead worker from pool
 
 
       _this._workers = _this._workers.filter(function (item) {
@@ -67,29 +107,38 @@ function () {
       try {
         require('worker_threads');
       } catch (error) {
-        console.error('Your current version, or configuration of Node.js does not support worker_threads.');
-        process.exit(1);
+        throw new Error('Your current version, or configuration of Node.js does not support worker_threads.');
       }
 
       this._WorkerProxy = WorkerProxies.NodeWorkerThread;
-    } else if ($config.workerType == 'compatibility_worker') {
-      this._WorkerProxy = WorkerProxies.CompatibilityWorker;
     } else {
       this._WorkerProxy = WorkerProxies.DefaultWorkerProxy;
     }
 
     this._logger = $config.logger || console.log;
+    this._requires = $config.requires;
+
+    if (!($config.workerType === 'worker_threads' || $config.workerType === 'fork_worker') && this._requires) {
+      throw new Error('Task.js requires is not supported in a clientside environment.');
+    }
+
     this._workerTaskConcurrency = ($config.workerTaskConcurrency || 1) - 1;
-    this._maxWorkers = $config.maxWorkers || 4;
+    this._maxWorkers = $config.maxWorkers || 1;
     this._idleTimeout = $config.idleTimeout === false ? false : $config.idleTimeout;
     this._taskTimeout = $config.taskTimeout || 0;
-    this._idleCheckInterval = $config.idleCheckInterval || 1000;
+    this._idleCheckInterval = 1000;
     this._warmStart = $config.warmStart || false;
     this._globals = $config.globals;
     this._globalsInitializationFunction = $config.initialize;
     this._debug = $config.debug;
 
-    this._log("creating new pool : ".concat(JSON.stringify($config)));
+    if (this._debug) {
+      this._log({
+        action: 'create_new_pool',
+        message: "creating new pool : ".concat(JSON.stringify($config)),
+        config: $config
+      });
+    }
 
     this._workers = [];
     this._workersInitializing = [];
@@ -100,7 +149,12 @@ function () {
     this._lastTaskTimeoutCheck = new Date();
 
     if (this._warmStart) {
-      this._log("warm starting workers");
+      if (this._debug) {
+        this._log({
+          action: 'warmstart',
+          message: 'warm starting workers'
+        });
+      }
 
       for (var i = 0; i < this._maxWorkers; i++) {
         this._createWorker();
@@ -110,10 +164,20 @@ function () {
 
   _createClass(WorkerManager, [{
     key: "_log",
-    value: function _log(message) {
-      if (this._debug) {
-        this._logger("task.js:manager[managerId(".concat(this.id, ")] ").concat(message));
+    value: function _log(data) {
+      var event = {
+        source: 'manager',
+        managerId: this.id
+      };
+      Object.keys(data).forEach(function (key) {
+        event[key] = data[key];
+      });
+
+      if (!event.message) {
+        event.message = event.action;
       }
+
+      this._logger(event);
     }
   }, {
     key: "getActiveWorkerCount",
@@ -121,8 +185,8 @@ function () {
       return this._workersInitializing.length + this._workers.length;
     }
   }, {
-    key: "run",
-    value: function run(task) {
+    key: "_run",
+    value: function _run(task) {
       if (this._idleTimeout && typeof this._idleCheckIntervalID !== 'number') {
         this._idleCheckIntervalID = setInterval(this._flushIdleWorkers, this._idleCheckInterval);
       }
@@ -141,7 +205,13 @@ function () {
 
       task.id = ++WorkerManager.taskCount;
 
-      this._log("added taskId(".concat(task.id, ") to the queue"));
+      if (this._debug) {
+        this._log({
+          action: 'add_to_queue',
+          taskId: task.id,
+          message: "added taskId(".concat(task.id, ") to the queue")
+        });
+      }
 
       return new Promise(function (resolve, reject) {
         task.resolve = resolve;
@@ -166,28 +236,30 @@ function () {
       });
     }
   }, {
+    key: "run",
+    value: function run(func) {
+      var wrappedFunc = this.wrap(func);
+
+      for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+        args[_key - 1] = arguments[_key];
+      }
+
+      return wrappedFunc.apply(void 0, args);
+    }
+  }, {
     key: "wrap",
     value: function wrap(func) {
-      var _ref = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {
-        useTransferables: false
-      },
-          useTransferables = _ref.useTransferables;
-
       return function () {
         var args = Array.from(arguments),
-            transferables = null;
+            transferables = null,
+            lastArg = args.slice(-1)[0];
 
-        if (useTransferables) {
-          transferables = args.slice(-1)[0];
-
-          if (!Array.isArray(transferables)) {
-            throw new Error('Task expects to be passed a transferables array as its last argument.');
-          }
-
+        if (lastArg instanceof Transferables) {
+          transferables = lastArg.toArray();
           args = args.slice(0, -1);
         }
 
-        return this.run({
+        return this._run({
           arguments: args,
           transferables: transferables,
           "function": func
@@ -197,7 +269,12 @@ function () {
   }, {
     key: "terminate",
     value: function terminate() {
-      this._log("terminated"); // kill idle timeout (if it exists)
+      if (this._debug) {
+        this._log({
+          action: 'terminated',
+          message: 'terminated'
+        });
+      } // kill idle timeout (if it exists)
 
 
       if (this._idleTimeout && typeof this._idleCheckIntervalID == 'number') {
@@ -236,7 +313,12 @@ function () {
   }, {
     key: "_flushIdleWorkers",
     value: function _flushIdleWorkers() {
-      this._log("flushing idle workers");
+      if (this._debug) {
+        this._log({
+          action: 'flush_idle_workers',
+          message: "flushing idle workers"
+        });
+      }
 
       this._workers = this._workers.filter(function (worker) {
         if (worker.tasks.length === 0 && new Date() - worker.lastTaskTimestamp > this._idleTimeout) {
@@ -279,12 +361,15 @@ function () {
         onExit: this._onWorkerExit
       });
 
-      if (this._globalsInitializationFunction || this._globals) {
-        this._log("running global initialization code");
+      if (this._globalsInitializationFunction || this._globals || this._requires) {
+        if (this._debug) {
+          this._log({
+            action: 'run_global_initialize',
+            message: "running global initialization code"
+          });
+        }
 
-        var globalsInitializationFunction = "\n\t\t\t\tfunction (_globals) {\n\t\t\t\t\tglobals = (".concat((this._globalsInitializationFunction || function (globals) {
-          return globals;
-        }).toString(), ")(_globals || {});\n\t\t\t\t}\n\t\t\t").trim();
+        var globalsInitializationFunction = "function (_globals) {\n\t\t\t\tlet requires = ".concat(JSON.stringify(this._requires || {}), ";\n\t\t\t\tObject.keys(requires).forEach(key => {\n\t\t\t\t\tglobal[key] = require(requires[key]);\n\t\t\t\t});\n\n\t\t\t\tif (typeof _globals != 'undefined') {\n\t\t\t\t\tObject.keys(_globals).forEach(key => {\n\t\t\t\t\t\tglobal[key] = _globals[key];\n\t\t\t\t\t});\n\t\t\t\t}\n\n\t\t\t\t(").concat((this._globalsInitializationFunction || function () {}).toString(), ")();\n\t\t\t}").trim();
 
         this._workersInitializing.push(worker);
 
@@ -302,6 +387,15 @@ function () {
 
         return worker;
       }
+    }
+  }], [{
+    key: "transferables",
+    value: function transferables() {
+      for (var _len2 = arguments.length, args = new Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+        args[_key2] = arguments[_key2];
+      }
+
+      return new Transferables(args);
     }
   }]);
 

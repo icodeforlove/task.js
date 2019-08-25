@@ -32,7 +32,7 @@ function (_GeneralWorker) {
 
     _this = _possibleConstructorReturn(this, _getPrototypeOf(WebWorker).apply(this, arguments));
 
-    _defineProperty(_assertThisInitialized(_this), "WORKER_SOURCE", "function () {\n\t\tonmessage = function (event) {\n\t\t\tvar message = event.data;\n\n\t\t\tvar args = Object.keys(message).filter(function (key) {\n\t\t\t\treturn key.match(/^argument/);\n\t\t\t}).sort(function (a, b) {\n\t\t\t\treturn parseInt(a.slice(8), 10) - parseInt(b.slice(8), 10);\n\t\t\t}).map(function (key) {\n\t\t\t\treturn message[key];\n\t\t\t});\n\n\t\t\ttry {\n\t\t\t\tvar result = eval('(' + message.func + ')').apply(null, args);\n\n\t\t\t\tif (typeof Promise != 'undefined' && result instanceof Promise) {\n\t\t\t\t\tresult.then(function (result) {\n\t\t\t\t\t\tpostMessage({id: message.id, result: result});\n\t\t\t\t\t}).catch(function (error) {\n\t\t\t\t\t\tpostMessage({id: message.id, error: error.stack});\n\t\t\t\t\t});\n\t\t\t\t} else {\n\t\t\t\t\tpostMessage({id: message.id, result: result});\n\t\t\t\t}\n\t\t\t} catch (error) {\n\t\t\t\tpostMessage({id: message.id, error: error.stack});\n\t\t\t}\n\t\t}\n\t}");
+    _defineProperty(_assertThisInitialized(_this), "WORKER_SOURCE", "function () {\n\t\tlet global = new Proxy(\n\t\t  {},\n\t\t  {\n\t\t    set: (obj, prop, newval) => (self[prop] = newval)\n\t\t  }\n\t\t);\n\n\t\tonmessage = function (event) {\n\t\t\tvar message = event.data;\n\n\t\t\tvar args = Object.keys(message).filter(function (key) {\n\t\t\t\treturn key.match(/^argument/);\n\t\t\t}).sort(function (a, b) {\n\t\t\t\treturn parseInt(a.slice(8), 10) - parseInt(b.slice(8), 10);\n\t\t\t}).map(function (key) {\n\t\t\t\treturn message[key];\n\t\t\t});\n\n\t\t\ttry {\n\t\t\t\tvar result = eval('(' + message.func + ')').apply(null, args);\n\n\t\t\t\tif (typeof Promise != 'undefined' && result instanceof Promise) {\n\t\t\t\t\tresult.then(function (result) {\n\t\t\t\t\t\tpostMessage({id: message.id, result: result});\n\t\t\t\t\t}).catch(function (error) {\n\t\t\t\t\t\tpostMessage({id: message.id, error: error.stack});\n\t\t\t\t\t});\n\t\t\t\t} else {\n\t\t\t\t\tpostMessage({id: message.id, result: result});\n\t\t\t\t}\n\t\t\t} catch (error) {\n\t\t\t\tpostMessage({id: message.id, error: error.stack});\n\t\t\t}\n\t\t}\n\t}");
 
     _defineProperty(_assertThisInitialized(_this), "_onMessage", function (event) {
       var message = event.data;
@@ -40,14 +40,24 @@ function (_GeneralWorker) {
       _this.handleWorkerMessage(message);
     });
 
-    _defineProperty(_assertThisInitialized(_this), "postMessage", function (message, options) {
-      _this._log("sending taskId(".concat(message.id, ") to worker process"));
+    _defineProperty(_assertThisInitialized(_this), "postMessage", function (message, transferables) {
+      if (_this._debug) {
+        _this._log({
+          taskId: message.id,
+          action: 'send_task_to_actual_worker',
+          message: "sending taskId(".concat(message.id, ") to worker process")
+        });
+      }
 
-      _this._worker.postMessage(message, options);
+      _this._worker.postMessage(message, transferables);
     });
 
     _defineProperty(_assertThisInitialized(_this), "terminate", function () {
-      _this._log("terminated");
+      if (_this._debug) {
+        _this._log({
+          message: 'terminated'
+        });
+      }
 
       _this._worker.terminate();
     });
@@ -56,7 +66,11 @@ function (_GeneralWorker) {
 
     _this._worker.addEventListener('message', _this._onMessage);
 
-    _this._log("initialized");
+    if (_this._debug) {
+      _this._log({
+        action: 'initialized'
+      });
+    }
 
     return _this;
   }

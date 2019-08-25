@@ -17,7 +17,11 @@ function () {
     _classCallCheck(this, GeneralWorker);
 
     _defineProperty(this, "handleWorkerExit", function () {
-      _this._log('killed');
+      if (_this._debug) {
+        _this._log({
+          action: 'killed'
+        });
+      }
 
       _this._onExitHandler(_this);
     });
@@ -42,11 +46,23 @@ function () {
         var task = _this.tasks[taskIndex];
 
         if (message.error) {
-          _this._log("taskId(".concat(task.id, ") has thrown an error ").concat(message.error));
+          if (_this._debug) {
+            _this._log({
+              taskId: task.id,
+              action: 'task_error',
+              message: "taskId(".concat(task.id, ") has thrown an error ").concat(message.error)
+            });
+          }
 
           task.reject(new Error("task.js: ".concat(message.error)));
         } else {
-          _this._log("taskId(".concat(task.id, ") has completed"));
+          if (_this._debug) {
+            _this._log({
+              taskId: task.id,
+              action: 'task_completed',
+              message: "taskId(".concat(task.id, ") has completed")
+            });
+          }
 
           task.resolve(message.result);
         }
@@ -69,10 +85,21 @@ function () {
 
   _createClass(GeneralWorker, [{
     key: "_log",
-    value: function _log(message) {
-      if (this._debug) {
-        this._logger("task.js:worker[managerId(".concat(this.managerId, ") workerId(").concat(this.id, ")]: ").concat(message));
+    value: function _log(data) {
+      var event = {
+        source: 'worker',
+        managerId: this.managerId,
+        workerId: this.id
+      };
+      Object.keys(data).forEach(function (key) {
+        event[key] = data[key];
+      });
+
+      if (!event.message) {
+        event.message = event.action;
       }
+
+      this._logger(event);
     }
   }, {
     key: "run",
