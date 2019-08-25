@@ -25,6 +25,7 @@
     "eslint": "6.2.2",
     "jasmine": "3.4.0",
     "puppeteer": "1.19.0",
+    "string-saw": "0.0.42",
     "webpack": "4.39.2",
     "webpack-cli": "3.3.7"
   }

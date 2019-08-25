@@ -3,7 +3,7 @@ require('babel-polyfill');
 window.Promise = require('bluebird');
 
 const Task = require('../../.');
-console.log(Task);
+
 (function() {
 	jasmine.getEnv().addReporter(new (function () {
 		this.jasmineDone = async function(result) {

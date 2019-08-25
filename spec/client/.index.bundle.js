@@ -420,8 +420,9 @@ function () {
 
     $config = $config || {};
     this.id = ++WorkerManager.managerCount;
+    this._workerType = $config.workerType;
 
-    if ($config.workerType === 'worker_threads') {
+    if (this._workerType === 'worker_threads') {
       try {
         __webpack_require__(!(function webpackMissingModule() { var e = new Error("Cannot find module 'worker_threads'"); e.code = 'MODULE_NOT_FOUND'; throw e; }()));
       } catch (error) {
@@ -435,11 +436,6 @@ function () {
 
     this._logger = $config.logger || console.log;
     this._requires = $config.requires;
-
-    if (!($config.workerType === 'worker_threads' || $config.workerType === 'fork_worker') && this._requires) {
-      throw new Error('Task.js requires is not supported in a clientside environment.');
-    }
-
     this._workerTaskConcurrency = ($config.workerTaskConcurrency || 1) - 1;
     this._maxWorkers = $config.maxWorkers || 1;
     this._idleTimeout = $config.idleTimeout === false ? false : $config.idleTimeout;
@@ -687,7 +683,15 @@ function () {
           });
         }
 
-        var globalsInitializationFunction = "function (_globals) {\n\t\t\t\tlet requires = ".concat(JSON.stringify(this._requires || {}), ";\n\t\t\t\tObject.keys(requires).forEach(key => {\n\t\t\t\t\tglobal[key] = require(requires[key]);\n\t\t\t\t});\n\n\t\t\t\tif (typeof _globals != 'undefined') {\n\t\t\t\t\tObject.keys(_globals).forEach(key => {\n\t\t\t\t\t\tglobal[key] = _globals[key];\n\t\t\t\t\t});\n\t\t\t\t}\n\n\t\t\t\t(").concat((this._globalsInitializationFunction || function () {}).toString(), ")();\n\t\t\t}").trim();
+        var requireCode;
+
+        if (this._workerType === 'web_worker') {
+          requireCode = "\n\t\t\t\tif (Object.keys(requires).length) {\n\t\t\t\t\timportScripts(...Object.values(requires));\n\n\t\t\t\t\tObject.keys(requires).forEach(key => {\n\t\t\t\t\t\tif (typeof self[key] === 'undefined') {\n\t\t\t\t\t\t\tthrow new Error('Task.js: require failed importing ' + key + ' (\"' + requires[key] + '\")');\n\t\t\t\t\t\t}\n\t\t\t\t\t});\n\t\t\t\t}\n\t\t\t\t";
+        } else {
+          requireCode = "\n\t\t\t\tObject.keys(requires).forEach(key => {\n\t\t\t\t\tglobal[key] = require(requires[key]);\n\t\t\t\t});\n\t\t\t\t";
+        }
+
+        var globalsInitializationFunction = "function (_globals) {\n\t\t\t\tlet requires = ".concat(JSON.stringify(this._requires || {}), ";\n\n\t\t\t\t").concat(requireCode, "\n\n\t\t\t\tif (typeof _globals != 'undefined') {\n\t\t\t\t\tObject.keys(_globals).forEach(key => {\n\t\t\t\t\t\tglobal[key] = _globals[key];\n\t\t\t\t\t});\n\t\t\t\t}\n\n\t\t\t\t(").concat((this._globalsInitializationFunction || function () {}).toString(), ")();\n\t\t\t}").trim();
 
         this._workersInitializing.push(worker);
 
@@ -19935,8 +19939,6 @@ window.Promise = __webpack_require__(/*! bluebird */ "./node_modules/bluebird/js
 
 var Task = __webpack_require__(/*! ../../. */ "./dist/client/client/index.js");
 
-console.log(Task);
-
 (function () {
   jasmine.getEnv().addReporter(new function () {
     this.jasmineDone =
@@ -20301,6 +20303,25 @@ module.exports = function (Task, Promise) {
       expect(customTask.getActiveWorkerCount()).toEqual(2);
       customTask.terminate();
       done();
+    });
+    it('can use requires', function (done) {
+      var customTask = new Task({
+        requires: workerType === 'web_worker' ? {
+          saw: 'https://cdnjs.cloudflare.com/ajax/libs/string-saw/0.0.42/saw.js'
+        } : {
+          saw: 'string-saw'
+        },
+        warmStart: true,
+        maxWorkers: 1,
+        workerType: workerType
+      });
+      customTask.run(function (foo) {
+        return saw(foo).append('bar').toString();
+      }, 'foo').then(function (foobar) {
+        expect(foobar).toBe('foobar');
+        customTask.terminate();
+        done();
+      });
     });
     it('can use globals and initialize', function (done) {
       var customTask = new Task({
