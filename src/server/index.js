@@ -1,15 +1,21 @@
-import os from 'os';
-import NodeWorker from './NodeWorker';
-import NodeWorkerThread from './NodeWorkerThread';
-import WorkerManager from '../WorkerManager';
-import generateTaskFactoryMethod from '../generateTaskFactoryMethod';
+const os = require('os');
+const NodeWorker = require('./NodeWorker');
+const NodeWorkerThread = require('./NodeWorkerThread');
+const WorkerManager = require('../WorkerManager');
+const generateTaskFactoryMethod = require('../generateTaskFactoryMethod');
 
 const defaults = {
 	maxWorkers: os.cpus().length
 };
 
-// expose default instance directly
-module.exports = new WorkerManager(defaults, {DefaultWorkerProxy: NodeWorker, NodeWorkerThread});
+module.exports = class ServerWorkerManager extends WorkerManager {
+	constructor ($config = {}) {
+		let config = {
+			workerType: 'fork_worker'
+		};
 
-// allow custom settings (task.js factory)
-module.exports.defaults = generateTaskFactoryMethod(defaults, {DefaultWorkerProxy: NodeWorker, NodeWorkerThread}, WorkerManager);
+		Object.keys($config).forEach(key => (config[key] = $config[key]));
+
+		super(config, {DefaultWorkerProxy: NodeWorker, NodeWorkerThread});
+	}
+};

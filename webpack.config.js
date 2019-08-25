@@ -1,56 +1,56 @@
-const fs = require('fs');
-const _ = require('lodash');
-const webpack = require('webpack');
-const packageData = require('./package.json');
+module.exports = [
+    {
+        mode: 'production',
 
-// common values across configs
-const LIBRARY_NAME = 'task';
-const CLIENT_ENTRY_PATH = `${__dirname}/src/client`;
-const CLIENT_OUTPUT_PATH = `${__dirname}/dist/client`;
-const DEFAULT_LOADERS = [
-    {loader: 'babel', test: /\.js$/, exclude: /(node_modules)/}
-];
+        target: 'web',
 
-// client dev version
-module.exports.CLIENT_DEV_CONFIG = {
-    entry: CLIENT_ENTRY_PATH,
-    output: {
-        path: CLIENT_OUTPUT_PATH,
-        filename: `${LIBRARY_NAME}.js`,
-        library: LIBRARY_NAME
+        entry: `${__dirname}/src/client/index.js`,
+
+        output: {
+            path: `${__dirname}/dist/client`,
+            filename: 'task.js',
+            library: 'Task'
+        },
+
+        module: {
+            rules: [
+                {
+                    test: /\.js$/,
+                    use: {
+                        loader: 'babel-loader',
+                        options: {}
+                    }
+                }
+            ]
+        },
+
+        devtool: 'source-map'
     },
-    module: {
-        loaders: DEFAULT_LOADERS
-    },
-    plugins: [
-        new webpack.BannerPlugin(`${packageData.name} - ${packageData.version} - clientside`, {})
-    ]
-};
 
-// client prod version
-module.exports.CLIENT_PROD_CONFIG = {
-    devtool: 'source-map',
-    entry: CLIENT_ENTRY_PATH,
-    output: {
-        path: CLIENT_OUTPUT_PATH,
-        filename: `${LIBRARY_NAME}.min.js`,
-        library: LIBRARY_NAME
-    },
-    module: {
-        loaders: DEFAULT_LOADERS
-    },
-    plugins: [
-        new webpack.optimize.UglifyJsPlugin({sourceMap: true}),
-        new webpack.BannerPlugin(`${packageData.name} - ${packageData.version} - clientside/minified`, {})
-    ]
-},
+    {
+        mode: 'development',
 
-// build every run
-module.exports = Object.keys(module.exports).map(key => module.exports[key]);
+        target: 'web',
 
-// external configs (not run by default)
-module.exports.CLIENT_KARMA_CONFIG = {
-    module: {
-        loaders: DEFAULT_LOADERS
+        entry: `${__dirname}/spec/client/index.js`,
+
+        output: {
+            path: `${__dirname}/spec/client`,
+            filename: '.index.bundle.js'
+        },
+
+        module: {
+            rules: [
+                {
+                    test: /\.js$/,
+                    use: {
+                        loader: 'babel-loader',
+                        options: {}
+                    }
+                }
+            ]
+        },
+
+        devtool: 'source-map'
     }
-};
+];

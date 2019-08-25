@@ -1,4 +1,8 @@
 {
-	"presets": ["stage-0", "es2015-ie"],
-	"plugins": ["transform-class-properties"]
+	"presets": [
+		"@babel/preset-env"
+	],
+	"plugins": [
+		"@babel/plugin-proposal-class-properties"
+	]
 }

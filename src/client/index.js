@@ -1,15 +1,27 @@
-import isModern from './isModern';
-import WorkerManager from '../WorkerManager';
-import generateTaskFactoryMethod from '../generateTaskFactoryMethod';
+const isModern = require('./isModern');
+const WorkerManager = require('../WorkerManager');
+const generateTaskFactoryMethod = require('../generateTaskFactoryMethod');
 
-const defaults = {
-	maxWorkers: navigator.hardwareConcurrency
+let WorkerProxies;
+
+if (isModern()) {
+	WorkerProxies = {
+		DefaultWorkerProxy: require('./WebWorker')
+	};
+}
+
+module.exports = class ClientWorkerManager extends WorkerManager {
+	constructor ($config = {}) {
+		if (!WorkerProxies) {
+			throw new Error('The browser does not support Workers');
+		}
+
+		let config = {
+			workerType: 'web_worker'
+		};
+
+		Object.keys($config).forEach(key => (config[key] = $config[key]));
+
+		super(config, WorkerProxies);
+	}
 };
-
-var WorkerProxy = isModern() ? require('./WebWorker') : require('./CompatibilityWorker');
-
-// expose default instance directly
-module.exports = new WorkerManager(defaults, {DefaultWorkerProxy: WorkerProxy});
-
-// allow custom settings (task.js factory)
-module.exports.defaults = generateTaskFactoryMethod(defaults, {DefaultWorkerProxy: WorkerProxy}, WorkerManager);

@@ -1,4 +1,4 @@
-import GeneralWorker from '../GeneralWorker';
+const GeneralWorker = require('../GeneralWorker');
 
 class NodeWorker extends GeneralWorker {
 	constructor ($config) {
@@ -16,15 +16,33 @@ class NodeWorker extends GeneralWorker {
 		this._worker.on('close', this._onExit);
 		this._worker.on('disconnect', this._onExit);
 		this._worker.on('error', this._onExit);
+		this._workerThreadId = this._worker.threadId;
 		this._alive = true;
 
-		this._log(`initialized`);
+		if (this._debug) {
+			this._log({
+				action: 'initialized'
+			});
+		}
 	}
 
-	_log = (message) => {
-		if (this._debug) {
-			this._logger(`task.js:worker[managerId(${this.managerId}) workerId(${this.id}) threadId(${this._worker.threadId})]: ${message}`);
+	_log (data) {
+		let event = {
+			source: 'worker_thread',
+			managerId: this.managerId,
+			workerId: this.id,
+			threadId: this._workerThreadId
+		};
+
+		Object.keys(data).forEach(key => {
+			event[key] = data[key];
+		});
+
+		if (!event.message) {
+			event.message = event.action;
 		}
+
+		this._logger(event);
 	}
 
 	_onExit = () => {
@@ -32,7 +50,11 @@ class NodeWorker extends GeneralWorker {
 			return;
 		}
 
-		this._log(`killed`);
+		if (this._debug) {
+			this._log({
+				action: 'killed'
+			});
+		}
 
 		this._alive = false;
 
@@ -40,17 +62,28 @@ class NodeWorker extends GeneralWorker {
 	}
 
 	_onMessage = (message) => {
-		//console.log(message);
 		this.handleWorkerMessage(message);
 	}
 
-	postMessage = (message) => {
-		this._log(`sending taskId(${message.id}) to worker process`);
-		this._worker.postMessage(message);
+	postMessage = (message, transferables) => {
+		if (this._debug) {
+			this._log({
+				taskId: message.id,
+				action: 'send_task_to_actual_worker',
+				message: `sending taskId(${message.id}) to worker process`
+			});
+		}
+
+		this._worker.postMessage(message, transferables);
 	}
 
 	terminate = () => {
-		this._log(`terminated`);
+		if (this._debug) {
+			this._log({
+				action: 'terminated'
+			});
+		}
+
 		this._worker.terminate();
 	}
 }

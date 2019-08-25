@@ -1,3 +1,21 @@
+class Transferables {
+	constructor (transferables) {
+		this.transferables = transferables.map(transferable => {
+			if (!(transferable instanceof ArrayBuffer) && transferable && transferable.buffer instanceof ArrayBuffer) {
+				return transferable.buffer;
+			} else if (transferable instanceof ArrayBuffer) {
+				return transferable;
+			} else {
+				throw new Error('Task.js: invalid transferable argument (ensure its a buffer backed array, or a buffer)');
+			}
+		});
+	}
+
+	toArray () {
+		return this.transferables;
+	}
+}
+
 class WorkerManager {
 	constructor ($config, WorkerProxies) {
 		$config = $config || {};
@@ -8,26 +26,38 @@ class WorkerManager {
 			try {
 				require('worker_threads');
 			} catch (error) {
-				console.error('Your current version, or configuration of Node.js does not support worker_threads.')
-				process.exit(1);
+				throw new Error('Your current version, or configuration of Node.js does not support worker_threads.');
 			}
+
 			this._WorkerProxy = WorkerProxies.NodeWorkerThread;
 		} else {
 			this._WorkerProxy = WorkerProxies.DefaultWorkerProxy;
 		}
 
 		this._logger = $config.logger || console.log;
+		this._requires = $config.requires;
+
+		if (!($config.workerType === 'worker_threads' || $config.workerType === 'fork_worker') && this._requires) {
+			throw new Error('Task.js requires is not supported in a clientside environment.');
+		}
 
 		this._workerTaskConcurrency = ($config.workerTaskConcurrency || 1) - 1;
-		this._maxWorkers = $config.maxWorkers || 4;
+		this._maxWorkers = $config.maxWorkers || 1;
 		this._idleTimeout = $config.idleTimeout === false ? false : $config.idleTimeout;
 		this._taskTimeout = $config.taskTimeout || 0;
-		this._idleCheckInterval = $config.idleCheckInterval || 1000;
+		this._idleCheckInterval = 1000;
 		this._warmStart = $config.warmStart || false;
 		this._globals = $config.globals;
 		this._globalsInitializationFunction = $config.initialize;
 		this._debug = $config.debug;
-		this._log(`creating new pool : ${JSON.stringify($config)}`);
+
+		if (this._debug) {
+			this._log({
+				action: 'create_new_pool',
+				message: `creating new pool : ${JSON.stringify($config)}`,
+				config: $config
+			});
+		}
 
 		this._workers = [];
 		this._workersInitializing = [];
@@ -38,7 +68,12 @@ class WorkerManager {
 		this._lastTaskTimeoutCheck = new Date();
 
 		if (this._warmStart) {
-			this._log(`warm starting workers`);
+			if (this._debug) {
+				this._log({
+					action: 'warmstart',
+					message: 'warm starting workers'
+				});
+			}
 
 			for (var i = 0; i < this._maxWorkers; i++) {
 				this._createWorker();
@@ -49,17 +84,28 @@ class WorkerManager {
 	static managerCount = 0;
 	static taskCount = 0;
 
-	_log (message) {
-		if (this._debug) {
-			this._logger(`task.js:manager[managerId(${this.id})] ${message}`);
+	_log (data) {
+		let event = {
+			source: 'manager',
+			managerId: this.id
+		};
+
+		Object.keys(data).forEach(key => {
+			event[key] = data[key];
+		});
+
+		if (!event.message) {
+			event.message = event.action;
 		}
+
+		this._logger(event);
 	}
 
 	getActiveWorkerCount () {
 		return this._workersInitializing.length + this._workers.length;
 	}
 
-	run (task) {
+	_run (task) {
 		if (this._idleTimeout && typeof this._idleCheckIntervalID !== 'number') {
 			this._idleCheckIntervalID = setInterval(this._flushIdleWorkers, this._idleCheckInterval);
 		}
@@ -78,34 +124,20 @@ class WorkerManager {
 
 		task.id = ++WorkerManager.taskCount;
 
-		this._log(`added taskId(${task.id}) to the queue`);
+		if (this._debug) {
+			this._log({
+				action: 'add_to_queue',
+				taskId: task.id,
+				message: `added taskId(${task.id}) to the queue`
+			});
+		}
 
-		if (!task.callback) {
-			return new Promise(function (resolve, reject) {
-				task.resolve = resolve;
-				task.reject = reject;
-				this._queue.push(task);
-				this._next();
-			}.bind(this));
-		} else {
+		return new Promise(function (resolve, reject) {
+			task.resolve = resolve;
+			task.reject = reject;
 			this._queue.push(task);
 			this._next();
-		}
-	}
-
-	setGlobals (globals) {
-		// terminate all existing workers
-		this._workers.forEach(function (worker) {
-			worker.terminate();
-		});
-
-		// flush worker pool
-		this._workers = [];
-
-		// replace globals
-		this._globals = globals;
-
-		this._next();
+		}.bind(this));
 	}
 
 	_runOnWorker(worker, args, func) {
@@ -120,42 +152,42 @@ class WorkerManager {
 		});
 	}
 
-	wrap (func, {useTransferables} = {useTransferables: false}) {
+	static transferables (...args) {
+		return new Transferables(args);
+	}
+
+	run (func, ...args) {
+		let wrappedFunc = this.wrap(func);
+
+		return wrappedFunc(...args);
+	}
+
+	wrap (func) {
 		return function () {
 			var args = Array.from(arguments),
-				callback = null,
-				transferables = null;
+				transferables = null,
+				lastArg = args.slice(-1)[0];
 
-			if (useTransferables) {
-				transferables = args.slice(-1)[0];
-				if (!Array.isArray(transferables)) {
-					throw new Error('Task expects to be passed a transferables array as its last argument.')
-				}
+			if (lastArg instanceof Transferables) {
+				transferables = lastArg.toArray();
 				args = args.slice(0, -1);
 			}
 
-			if (typeof args[args.length - 1] === 'function') {
-				// apparently splice is broken in ie8
-				callback = args.slice(-1).pop();
-				args = args.slice(0, -1);
-			}
-
-			return this.run({
+			return this._run({
 				arguments: args,
 				transferables,
-				function: func,
-				callback
+				function: func
 			});
 		}.bind(this);
 	}
 
-	decorate = (target, key) => {
-		target[key] = this.wrap(target[key]);
-		return target;
-	}
-
 	terminate () {
-		this._log(`terminated`);
+		if (this._debug) {
+			this._log({
+				action: 'terminated',
+				message: 'terminated'
+			});
+		}
 
 		// kill idle timeout (if it exists)
 		if (this._idleTimeout && typeof this._idleCheckIntervalID == 'number') {
@@ -206,7 +238,14 @@ class WorkerManager {
 		}
 
 		let task = this._queue.shift();
-		this._log(`sending taskId(${task.id}) to workerId(${worker.id})`)
+		if (this._debug) {
+			this._log({
+				action: 'send_task_to_worker',
+				taskId: task.id,
+				workerId: worker.id,
+				message: `sending taskId(${task.id}) to workerId(${worker.id})`
+			});
+		}
 		worker.run(task);
 	}
 
@@ -215,7 +254,13 @@ class WorkerManager {
 	}
 
 	_onWorkerExit = (worker) => {
-		this._log(`worker died, reissuing task`);
+		if (this._debug) {
+			this._log({
+				action: 'worker_died',
+				workerId: worker.id,
+				message: `worker died, reissuing tasks`
+			});
+		}
 
 		// purge dead worker from pool
 		this._workers = this._workers.filter(item => item != worker);
@@ -230,7 +275,13 @@ class WorkerManager {
 	}
 
 	_flushIdleWorkers () {
-		this._log(`flushing idle workers`);
+		if (this._debug) {
+			this._log({
+				action: 'flush_idle_workers',
+				message: `flushing idle workers`
+			});
+		}
+
 		this._workers = this._workers.filter(function (worker) {
 			if (worker.tasks.length === 0 && new Date() - worker.lastTaskTimestamp > this._idleTimeout) {
 				worker.terminate();
@@ -267,13 +318,28 @@ class WorkerManager {
 			onExit: this._onWorkerExit
 		});
 
-		if (this._globalsInitializationFunction || this._globals) {
-			this._log(`running global initialization code`);
-			var globalsInitializationFunction = `
-				function (_globals) {
-					globals = (${(this._globalsInitializationFunction || function (globals) {return globals}).toString()})(_globals || {});
+		if (this._globalsInitializationFunction || this._globals || this._requires) {
+			if (this._debug) {
+				this._log({
+					action: 'run_global_initialize',
+					message: `running global initialization code`
+				});
+			}
+
+			var globalsInitializationFunction = `function (_globals) {
+				let requires = ${JSON.stringify(this._requires || {})};
+				Object.keys(requires).forEach(key => {
+					global[key] = require(requires[key]);
+				});
+
+				if (typeof _globals != 'undefined') {
+					Object.keys(_globals).forEach(key => {
+						global[key] = _globals[key];
+					});
 				}
-			`.trim();
+
+				(${(this._globalsInitializationFunction || (() => {})).toString()})();
+			}`.trim();
 
 			this._workersInitializing.push(worker);
 			this._runOnWorker(worker, [this._globals || {}], globalsInitializationFunction).then(function () {

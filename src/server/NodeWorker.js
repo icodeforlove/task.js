@@ -1,5 +1,5 @@
-import cp from 'child_process';
-import GeneralWorker from '../GeneralWorker';
+const cp = require('child_process');
+const GeneralWorker = require('../GeneralWorker');
 
 class NodeWorker extends GeneralWorker {
 	constructor ($config) {
@@ -15,13 +15,30 @@ class NodeWorker extends GeneralWorker {
 		this._worker.on('error', this._onExit);
 		this._alive = true;
 
-		this._log(`initialized`);
+		if (this._debug) {
+			this._log({
+				action: 'initialized'
+			});
+		}
 	}
 
-	_log = (message) => {
-		if (this._debug) {
-			this._logger(`task.js:worker[managerId(${this.managerId}) workerId(${this.id}) processId(${this._worker.pid})]: ${message}`);
+	_log (data) {
+		let event = {
+			source: 'worker_thread',
+			managerId: this.managerId,
+			workerId: this.id,
+			processId: this._worker.pid
+		};
+
+		Object.keys(data).forEach(key => {
+			event[key] = data[key];
+		});
+
+		if (!event.message) {
+			event.message = event.action;
 		}
+
+		this._logger(event);
 	}
 
 	_onExit = () => {
@@ -29,7 +46,11 @@ class NodeWorker extends GeneralWorker {
 			return;
 		}
 
-		this._log(`killed`);
+		if (this._debug) {
+			this._log({
+				action: 'killed'
+			});
+		}
 
 		this._alive = false;
 
@@ -41,12 +62,22 @@ class NodeWorker extends GeneralWorker {
 	}
 
 	postMessage = (message) => {
-		this._log(`sending taskId(${message.id}) to worker process`);
+		if (this._debug) {
+			this._log({
+				taskId: message.id,
+				action: 'send_task_to_actual_worker',
+				message: `sending taskId(${message.id}) to worker process`
+			});
+		}
 		this._worker.send(message);
 	}
 
 	terminate = () => {
-		this._log(`terminated`);
+		if (this._debug) {
+			this._log({
+				action: 'terminated'
+			});
+		}
 		this._worker.kill();
 	}
 }

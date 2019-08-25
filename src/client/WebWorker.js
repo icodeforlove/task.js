@@ -1,5 +1,5 @@
-import functionToObjectURL from './functionToObjectURL';
-import GeneralWorker from '../GeneralWorker';
+const functionToObjectURL = require('./functionToObjectURL');
+const GeneralWorker = require('../GeneralWorker');
 
 class WebWorker extends GeneralWorker {
 	constructor ($config) {
@@ -8,10 +8,21 @@ class WebWorker extends GeneralWorker {
 		this._worker = new Worker(functionToObjectURL(this.WORKER_SOURCE));
 		this._worker.addEventListener('message', this._onMessage);
 
-		this._log(`initialized`);
+		if (this._debug) {
+			this._log({
+				action: 'initialized'
+			});
+		}
 	}
 
 	WORKER_SOURCE = `function () {
+		let global = new Proxy(
+		  {},
+		  {
+		    set: (obj, prop, newval) => (self[prop] = newval)
+		  }
+		);
+
 		onmessage = function (event) {
 			var message = event.data;
 
@@ -46,13 +57,23 @@ class WebWorker extends GeneralWorker {
 		this.handleWorkerMessage(message);
 	}
 
-	postMessage = (message, options) => {
-		this._log(`sending taskId(${message.id}) to worker process`);
-		this._worker.postMessage(message, options);
+	postMessage = (message, transferables) => {
+		if (this._debug) {
+			this._log({
+				taskId: message.id,
+				action: 'send_task_to_actual_worker',
+				message: `sending taskId(${message.id}) to worker process`
+			});
+		}
+		this._worker.postMessage(message, transferables);
 	}
 
 	terminate = () => {
-		this._log(`terminated`);
+		if (this._debug) {
+			this._log({
+				message: 'terminated'
+			});
+		}
 		this._worker.terminate();
 	}
 }

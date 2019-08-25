@@ -1,12 +1,26 @@
-import 'babel-polyfill';
+require('babel-polyfill');
 
 window.Promise = require('bluebird');
 
-import task from '../../src/client';
-import CompatibilityWorker from '../../src/client/CompatibilityWorker';
+const Task = require('../../.');
+console.log(Task);
+(function() {
+	jasmine.getEnv().addReporter(new (function () {
+		this.jasmineDone = async function(result) {
+			window.JASMINE_FINISHED_STATUS = result.overallStatus;
+		};
+	}));
+})();
+jasmine.DEFAULT_TIMEOUT_INTERVAL = 12000;
 
-describe('General Tests', require(`${__dirname}/../general.js`)(
-	task,
+// describe('Browser Compatibility Tests', require(`${__dirname}/../general.js`)(
+// 	Task,
+// 	Promise,
+// 	{workerType: 'compatibility_worker'}
+// ));
+
+describe('Browser Web Worker Tests', require(`${__dirname}/../general.js`)(
+	Task,
 	Promise,
-	CompatibilityWorker
+	{workerType: 'web_worker'}
 ));

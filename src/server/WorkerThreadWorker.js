@@ -1,7 +1,5 @@
 const { parentPort, workerData } = require('worker_threads');
 
-let globals = {};
-
 parentPort.on('message', (message) => {
 	let args = Object.keys(message).filter(function (key) {
 		return key.match(/^argument/);
