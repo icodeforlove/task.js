@@ -81,7 +81,9 @@ function (_GeneralWorker) {
     var _require = require('worker_threads'),
         Worker = _require.Worker;
 
-    _this._worker = new Worker("".concat(__dirname, "/WorkerThreadWorker.js"), {// TODO: DATA SUPPORT
+    _this._worker = new Worker("".concat(__dirname, "/WorkerThreadWorker.js"), {
+      env: $config.env // TODO: DATA SUPPORT
+
     });
 
     _this._worker.on('message', _this._onMessage);

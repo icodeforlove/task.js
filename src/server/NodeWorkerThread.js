@@ -9,6 +9,7 @@ class NodeWorker extends GeneralWorker {
 		const { Worker } = require('worker_threads');
 
 		this._worker = new Worker(`${__dirname}/WorkerThreadWorker.js`, {
+			env: $config.env
 			// TODO: DATA SUPPORT
 		});
 		this._worker.on('message', this._onMessage);

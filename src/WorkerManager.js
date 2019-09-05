@@ -47,6 +47,7 @@ class WorkerManager {
 		this._warmStart = $config.warmStart || false;
 		this._warmStartCompleted = false;
 		this._globals = $config.globals;
+		this._env = $config.env;
 		this._globalsInitializationFunction = $config.initialize;
 		this._debug = $config.debug;
 		this._terminated = false;
@@ -337,6 +338,7 @@ class WorkerManager {
 		let worker = new this._WorkerProxy({
 			debug: this._debug,
 			logger: this._logger,
+			env: this._env,
 			id: workerId,
 			managerId: this.id,
 			onTaskComplete: this._onWorkerTaskComplete,

@@ -24,6 +24,28 @@ module.exports = function (Task, Promise, {workerType} = {}) {
 				});
 		});
 
+		if (workerType === 'worker_threads' || workerType === 'fork_worker') {
+			it('can use env', function(done) {
+				let customTask = new Task({
+					maxWorkers: 1,
+					env: {
+						_FOO: 'BAR'
+					},
+					workerType
+				});
+
+				customTask.run(() => process.env._FOO)
+					.then(function (result) {
+						expect(result).toBe('BAR');
+						done();
+					})
+					.then(async () => {
+						await Promise.delay(0);
+						customTask.terminate();
+					});
+			});
+		}
+
 		if (workerType === 'worker_threads' || workerType === 'web_worker') {
 			it('can use worker threads', function(done) {
 				let customTask = new Task({
