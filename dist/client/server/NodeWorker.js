@@ -79,7 +79,9 @@ function (_GeneralWorker) {
     });
 
     $config = $config || {};
-    _this._worker = cp.fork("".concat(__dirname, "/EvalWorker.js"));
+    _this._worker = cp.fork("".concat(__dirname, "/EvalWorker.js"), {
+      env: $config.env
+    });
 
     _this._worker.on('message', _this._onMessage);
 

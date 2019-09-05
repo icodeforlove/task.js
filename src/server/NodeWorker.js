@@ -7,7 +7,9 @@ class NodeWorker extends GeneralWorker {
 
 		$config = $config || {};
 
-		this._worker = cp.fork(`${__dirname}/EvalWorker.js`);
+		this._worker = cp.fork(`${__dirname}/EvalWorker.js`, {
+			env: $config.env
+		});
 		this._worker.on('message', this._onMessage);
 		this._worker.on('exit', this._onExit);
 		this._worker.on('close', this._onExit);

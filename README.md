@@ -42,6 +42,7 @@ await task.run(
 - **requires** *[Object]* key value require object like the following `{qs: 'querystring'}`, all keys would become globals. **This is only supported in Node.js!**
 - **globals = {}** *[Object]* sets global variables in all workers {foo: 'bar'}, would set `foo` to `'bar'`
 - **initialize = undefined** *[Function]* you can use `global.foo = 'bar'` within this function to 
+- **env** *[Object]* allows you to set/override the workers env variables (by default they are inherited from the main process) **This is only supported in Node.js!**
 
 **The `Function/String` you pass into `.run` or `.wrap` is ran inside of the workers context. So it will NOT have access to your main threads variable scope. If you would like to pass information into the task you need to use function arguments, or `task globals`.**
 

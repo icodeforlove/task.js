@@ -448,6 +448,7 @@ function () {
     this._warmStart = $config.warmStart || false;
     this._warmStartCompleted = false;
     this._globals = $config.globals;
+    this._env = $config.env;
     this._globalsInitializationFunction = $config.initialize;
     this._debug = $config.debug;
     this._terminated = false;
@@ -692,6 +693,7 @@ function () {
       var worker = new this._WorkerProxy({
         debug: this._debug,
         logger: this._logger,
+        env: this._env,
         id: workerId,
         managerId: this.id,
         onTaskComplete: this._onWorkerTaskComplete,
@@ -20010,7 +20012,7 @@ describe('Browser Web Worker Tests', __webpack_require__(/*! ./spec/client/../ge
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-/* WEBPACK VAR INJECTION */(function(global) {function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { Promise.resolve(value).then(_next, _throw); } }
+/* WEBPACK VAR INJECTION */(function(process, global) {function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { Promise.resolve(value).then(_next, _throw); } }
 
 function _asyncToGenerator(fn) { return function () { var self = this, args = arguments; return new Promise(function (resolve, reject) { var gen = fn.apply(self, args); function _next(value) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value); } function _throw(err) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err); } _next(undefined); }); }; }
 
@@ -20040,16 +20042,19 @@ module.exports = function (Task, Promise) {
       });
     });
 
-    if (workerType === 'worker_threads' || workerType === 'web_worker') {
-      it('can use worker threads', function (done) {
+    if (workerType === 'worker_threads' || workerType === 'fork_worker') {
+      it('can use env', function (done) {
         var customTask = new Task({
           maxWorkers: 1,
+          env: {
+            _FOO: 'BAR'
+          },
           workerType: workerType
         });
-        customTask.run(function (number) {
-          return Math.pow(number, 2);
-        }, 2).then(function (squaredNumber) {
-          expect(squaredNumber).toBe(4);
+        customTask.run(function () {
+          return process.env._FOO;
+        }).then(function (result) {
+          expect(result).toBe('BAR');
           done();
         }).then(
         /*#__PURE__*/
@@ -20074,17 +20079,18 @@ module.exports = function (Task, Promise) {
           }, _callee);
         })));
       });
-      it('can use SharedArrayBuffers', function (done) {
+    }
+
+    if (workerType === 'worker_threads' || workerType === 'web_worker') {
+      it('can use worker threads', function (done) {
         var customTask = new Task({
           maxWorkers: 1,
           workerType: workerType
         });
-        var sharedarraybufferUint16Array = new Uint16Array(new SharedArrayBuffer(128));
-        sharedarraybufferUint16Array[0] = 100;
-        customTask.run(function (sharedarraybufferUint16Array) {
-          sharedarraybufferUint16Array[0] = 42;
-        }, sharedarraybufferUint16Array).then(function () {
-          expect(sharedarraybufferUint16Array[0]).toBe(42);
+        customTask.run(function (number) {
+          return Math.pow(number, 2);
+        }, 2).then(function (squaredNumber) {
+          expect(squaredNumber).toBe(4);
           done();
         }).then(
         /*#__PURE__*/
@@ -20109,24 +20115,17 @@ module.exports = function (Task, Promise) {
           }, _callee2);
         })));
       });
-      it('can use transferables with wrap', function (done) {
+      it('can use SharedArrayBuffers', function (done) {
         var customTask = new Task({
-          workerType: workerType,
-          warmStart: true,
           maxWorkers: 1,
-          workerTaskConcurrency: 1
+          workerType: workerType
         });
-        var transferableUint16Array = new Uint16Array(128);
-        transferableUint16Array[0] = 100;
-        var transferableTask = customTask.wrap(function (transferableUint16Array) {
-          transferableUint16Array[0] = 42;
-          return transferableUint16Array.buffer;
-        });
-        transferableTask(transferableUint16Array, Task.transferables(transferableUint16Array)).then(function (buffer) {
-          var transferredUint16Array = new Uint16Array(buffer);
-          expect(transferableUint16Array.length).toBe(0);
-          expect(transferredUint16Array[0]).toBe(42);
-          expect(transferredUint16Array.length).toBe(128);
+        var sharedarraybufferUint16Array = new Uint16Array(new SharedArrayBuffer(128));
+        sharedarraybufferUint16Array[0] = 100;
+        customTask.run(function (sharedarraybufferUint16Array) {
+          sharedarraybufferUint16Array[0] = 42;
+        }, sharedarraybufferUint16Array).then(function () {
+          expect(sharedarraybufferUint16Array[0]).toBe(42);
           done();
         }).then(
         /*#__PURE__*/
@@ -20151,7 +20150,7 @@ module.exports = function (Task, Promise) {
           }, _callee3);
         })));
       });
-      it('can use transferables with run', function (done) {
+      it('can use transferables with wrap', function (done) {
         var customTask = new Task({
           workerType: workerType,
           warmStart: true,
@@ -20160,10 +20159,11 @@ module.exports = function (Task, Promise) {
         });
         var transferableUint16Array = new Uint16Array(128);
         transferableUint16Array[0] = 100;
-        customTask.run(function (transferableUint16Array) {
+        var transferableTask = customTask.wrap(function (transferableUint16Array) {
           transferableUint16Array[0] = 42;
           return transferableUint16Array.buffer;
-        }, transferableUint16Array, Task.transferables(transferableUint16Array)).then(function (buffer) {
+        });
+        transferableTask(transferableUint16Array, Task.transferables(transferableUint16Array)).then(function (buffer) {
           var transferredUint16Array = new Uint16Array(buffer);
           expect(transferableUint16Array.length).toBe(0);
           expect(transferredUint16Array[0]).toBe(42);
@@ -20190,6 +20190,47 @@ module.exports = function (Task, Promise) {
               }
             }
           }, _callee4);
+        })));
+      });
+      it('can use transferables with run', function (done) {
+        var customTask = new Task({
+          workerType: workerType,
+          warmStart: true,
+          maxWorkers: 1,
+          workerTaskConcurrency: 1
+        });
+        var transferableUint16Array = new Uint16Array(128);
+        transferableUint16Array[0] = 100;
+        customTask.run(function (transferableUint16Array) {
+          transferableUint16Array[0] = 42;
+          return transferableUint16Array.buffer;
+        }, transferableUint16Array, Task.transferables(transferableUint16Array)).then(function (buffer) {
+          var transferredUint16Array = new Uint16Array(buffer);
+          expect(transferableUint16Array.length).toBe(0);
+          expect(transferredUint16Array[0]).toBe(42);
+          expect(transferredUint16Array.length).toBe(128);
+          done();
+        }).then(
+        /*#__PURE__*/
+        _asyncToGenerator(
+        /*#__PURE__*/
+        regeneratorRuntime.mark(function _callee5() {
+          return regeneratorRuntime.wrap(function _callee5$(_context5) {
+            while (1) {
+              switch (_context5.prev = _context5.next) {
+                case 0:
+                  _context5.next = 2;
+                  return Promise.delay(0);
+
+                case 2:
+                  customTask.terminate();
+
+                case 3:
+                case "end":
+                  return _context5.stop();
+              }
+            }
+          }, _callee5);
         })));
       });
     }
@@ -20395,7 +20436,7 @@ module.exports = function (Task, Promise) {
     });
   };
 };
-/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./../node_modules/webpack/buildin/global.js */ "./node_modules/webpack/buildin/global.js")))
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./../node_modules/process/browser.js */ "./node_modules/process/browser.js"), __webpack_require__(/*! ./../node_modules/webpack/buildin/global.js */ "./node_modules/webpack/buildin/global.js")))
 
 /***/ })
 
