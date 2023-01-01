@@ -19,14 +19,14 @@
     "@babel/plugin-syntax-import-meta": "7.2.0",
     "@babel/preset-env": "7.5.5",
     "babel-eslint": "9.0.0",
-    "babel-loader": "8.0.6",
+    "babel-loader": "8.3.0",
     "babel-polyfill": "6.26.0",
     "bluebird": "3.4.1",
     "eslint": "6.2.2",
     "jasmine": "3.4.0",
     "puppeteer": "1.19.0",
     "string-saw": "0.0.42",
-    "webpack": "4.39.2",
-    "webpack-cli": "3.3.7"
+    "webpack": "5.75.0",
+    "webpack-cli": "5.0.1"
   }
 }
